@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 
 import { MovieListView } from "@/components/movie/MovieListView";
 import { ErrorState } from "@/components/ui/States";
-import { api, errorMessage } from "@/lib/api";
+import { api, errorMessage, isUnreachable } from "@/lib/api";
 import { buildChips, LIST_TYPES, readPage, readProvider } from "@/lib/nav";
 import type { MovieSummary, PageResponse } from "@/lib/types";
 
@@ -30,17 +30,19 @@ export default async function ListTypePage({
 
   let result: PageResponse<MovieSummary> | null = null;
   let failure: string | null = null;
+  let unreachable = false;
 
   try {
     result = await api.listByType(type, { page, limit: 24, provider });
   } catch (error) {
     failure = errorMessage(error);
+    unreachable = isUnreachable(error);
   }
 
   if (!result) {
     return (
       <div className="px-4 py-5 sm:px-6">
-        <ErrorState message={failure ?? "Không tải được danh sách phim."} />
+        <ErrorState message={failure ?? "Không tải được danh sách phim."} unreachable={unreachable} />
       </div>
     );
   }

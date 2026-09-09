@@ -71,6 +71,34 @@ public class SettingsService {
         return pick(TMDB_API_KEY, tmdb.apiKey());
     }
 
+    /**
+     * Khoa dung cho kieu goi v4 (gui bang header {@code Authorization}).
+     *
+     * <p>Chi tra ve khi gia tri that su la token v4. Truoc day cu co gi trong o do la
+     * gui di theo kieu v4, nen mot khoa v3 dan nham o se bi TheMovieDB tu choi thang -
+     * trong khi chinh khoa do goi kieu v3 thi chay tot.</p>
+     */
+    public synchronized String tmdbBearerToken() {
+        String token = pick(TMDB_ACCESS_TOKEN, tmdb.accessToken());
+        return "v4".equals(shapeOf(token)) ? token : null;
+    }
+
+    /**
+     * Khoa dung cho kieu goi v3 (gui bang tham so {@code api_key}).
+     *
+     * <p>Nhan ca khoa v3 bi dan nham vao o token v4: no van la khoa that, chi nam sai
+     * cho. Bat nguoi dung dan lai cho dung khi minh doan duoc y ho la lam kho khong can
+     * thiet.</p>
+     */
+    public synchronized String tmdbQueryKey() {
+        String key = pick(TMDB_API_KEY, tmdb.apiKey());
+        if (key != null) {
+            return key;
+        }
+        String token = pick(TMDB_ACCESS_TOKEN, tmdb.accessToken());
+        return "v3".equals(shapeOf(token)) ? token : null;
+    }
+
     /** Gia tri dat tren giao dien di truoc, khong co thi lui ve bien moi truong. */
     private String pick(String name, String fromEnvironment) {
         String saved = overrides.get(name);
@@ -128,7 +156,37 @@ public class SettingsService {
         entry.put("set", onDisk || inEnvironment);
         // "Dat o dau" giup nguoi dung biet sua cho nao khi muon doi.
         entry.put("source", onDisk ? "cms" : (inEnvironment ? "env" : "none"));
+        if (TMDB_ACCESS_TOKEN.equals(name)) {
+            entry.put("shape", shapeOf(pick(name, fromEnvironment)));
+        }
         return entry;
+    }
+
+    /**
+     * Doan xem gia tri dang giu <i>trong o token v4</i> co dung la token v4 khong.
+     *
+     * <p>TheMovieDB phat hai thu tren cung mot trang cai dat, dat canh nhau: khoa v3 va
+     * token doc v4. Dan nham khoa v3 vao o nay thi no duoc gui di theo kieu v4 va bi tu
+     * choi thang - ma man hinh chi bao "tu choi khoa", nguoi dung se di doi khoa moi
+     * trong khi khoa cu van dung, chi nam sai o.</p>
+     *
+     * <p>Chi tra ve <b>dang</b> chu khong bao gio tra ve gia tri: hai thu deu la khoa
+     * that, doc nguoc ra la ro ri.</p>
+     */
+    private String shapeOf(String value) {
+        if (value == null || value.isBlank()) {
+            return "none";
+        }
+        String trimmed = value.trim();
+        // Token v4 la mot JWT: ba phan ngan cach bang dau cham, mo dau bang "eyJ".
+        if (trimmed.startsWith("eyJ") && trimmed.chars().filter(at -> at == '.').count() == 2) {
+            return "v4";
+        }
+        // Khoa v3 la 32 ky tu he 16.
+        if (trimmed.matches("[0-9a-fA-F]{32}")) {
+            return "v3";
+        }
+        return "khong ro";
     }
 
     // ------------------------------------------------------------------ luu tru

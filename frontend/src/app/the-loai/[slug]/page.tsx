@@ -1,6 +1,6 @@
 import { MovieListView } from "@/components/movie/MovieListView";
 import { ErrorState } from "@/components/ui/States";
-import { api, errorMessage, safe } from "@/lib/api";
+import { api, errorMessage, isUnreachable, safe } from "@/lib/api";
 import { readPage, readProvider, withProvider } from "@/lib/nav";
 import type { MovieSummary, PageResponse, ProviderCode, Taxonomy } from "@/lib/types";
 
@@ -27,17 +27,19 @@ export default async function CategoryPage({
 
   let result: PageResponse<MovieSummary> | null = null;
   let failure: string | null = null;
+  let unreachable = false;
 
   try {
     result = await api.listByCategory(slug, { page, limit: 24, provider });
   } catch (error) {
     failure = errorMessage(error);
+    unreachable = isUnreachable(error);
   }
 
   if (!result) {
     return (
       <div className="px-4 py-5 sm:px-6">
-        <ErrorState message={failure ?? "Không tải được danh sách phim."} />
+        <ErrorState message={failure ?? "Không tải được danh sách phim."} unreachable={unreachable} />
       </div>
     );
   }

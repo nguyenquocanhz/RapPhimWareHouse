@@ -6,7 +6,7 @@ import {
   type DiscoverQuery,
 } from "@/components/tmdb/DiscoverFilters";
 import { EmptyState, ErrorState, PageHeading } from "@/components/ui/States";
-import { api, ApiRequestError, errorMessage, safe } from "@/lib/api";
+import { api, ApiRequestError, blockedHint, errorMessage, isUnreachable, safe } from "@/lib/api";
 import { formatCount } from "@/lib/format";
 import { readPage } from "@/lib/nav";
 import type { PageResponse, Taxonomy, TmdbDiscoverItem } from "@/lib/types";
@@ -42,6 +42,8 @@ export default async function DiscoverPage({ searchParams }: PageProps<"/kham-ph
 
   let result: PageResponse<TmdbDiscoverItem> | null = null;
   let failure: string | null = null;
+  let hint: string | undefined;
+  let unreachable = false;
   let notConfigured = false;
 
   try {
@@ -59,6 +61,8 @@ export default async function DiscoverPage({ searchParams }: PageProps<"/kham-ph
     notConfigured =
       error instanceof ApiRequestError && error.code === "TMDB_NOT_CONFIGURED";
     failure = errorMessage(error);
+    unreachable = isUnreachable(error);
+    hint = blockedHint(error);
   }
 
   if (notConfigured) {
@@ -74,7 +78,11 @@ export default async function DiscoverPage({ searchParams }: PageProps<"/kham-ph
     return (
       <div className="px-4 py-5 sm:px-6">
         <PageHeading title="Khám phá phim" />
-        <ErrorState message={failure ?? "Không tải được dữ liệu từ TheMovieDB."} />
+        <ErrorState
+          message={failure ?? "Không tải được dữ liệu từ TheMovieDB."}
+          unreachable={unreachable}
+          hint={hint}
+        />
       </div>
     );
   }

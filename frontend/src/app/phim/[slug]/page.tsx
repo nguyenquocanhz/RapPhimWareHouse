@@ -4,7 +4,7 @@ import { RelatedMovies } from "@/components/movie/RelatedMovies";
 import { ErrorState } from "@/components/ui/States";
 import { MovieDescription } from "@/components/watch/MovieDescription";
 import { WatchClient } from "@/components/watch/WatchClient";
-import { api, ApiRequestError, errorMessage, safe } from "@/lib/api";
+import { api, ApiRequestError, errorMessage, isUnreachable, safe } from "@/lib/api";
 import { stripHtml } from "@/lib/format";
 import { readProvider } from "@/lib/nav";
 import type { MovieDetail, MovieSummary, ProviderCode } from "@/lib/types";
@@ -34,6 +34,7 @@ export default async function MoviePage({ params, searchParams }: PageProps<"/ph
 
   let movie: MovieDetail | null = null;
   let failure: string | null = null;
+  let unreachable = false;
   let missing = false;
 
   try {
@@ -41,6 +42,7 @@ export default async function MoviePage({ params, searchParams }: PageProps<"/ph
   } catch (error) {
     missing = error instanceof ApiRequestError && error.isNotFound;
     failure = errorMessage(error);
+    unreachable = isUnreachable(error);
   }
 
   if (missing) {
@@ -50,7 +52,7 @@ export default async function MoviePage({ params, searchParams }: PageProps<"/ph
   if (!movie) {
     return (
       <div className="px-4 py-5 sm:px-6">
-        <ErrorState message={failure ?? "Không tải được thông tin phim."} />
+        <ErrorState message={failure ?? "Không tải được thông tin phim."} unreachable={unreachable} />
       </div>
     );
   }

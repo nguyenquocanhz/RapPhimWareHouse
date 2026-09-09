@@ -255,6 +255,32 @@ export function subtitleUrl(raw: string): string {
   }
 }
 
+/** Loi la do khong goi duoc backend, khong phai loi tu nguon ben ngoai. */
+export function isUnreachable(error: unknown): boolean {
+  return error instanceof ApiRequestError && error.code === "BACKEND_UNREACHABLE";
+}
+
+/**
+ * Doan xem loi co phai do mang chan nguon ben ngoai khong.
+ *
+ * <p>Bat tay TLS bi cat giua chung, hoac loi doc ghi khi dang goi, thuong khong phai
+ * do nguon hong ma do co gi do tren duong chan lai. Noi thang ra de nguoi dung khoi
+ * di sua nham cho - vi day la thu ung dung khong sua duoc.</p>
+ */
+export function blockedHint(error: unknown): string | undefined {
+  // Doc theo ma loi chu khong theo cau chu: backend co the sua lai loi nhan bat cu luc
+  // nao, ma so cau chu thi lan sua nao cung am tham lam hong cho nay.
+  if (!(error instanceof ApiRequestError) || error.code !== "UPSTREAM_BLOCKED") {
+    return undefined;
+  }
+
+  return (
+    "Máy chủ mở được kết nối nhưng bị cắt ngay khi bắt tay - thường là do mạng chặn " +
+    "tên miền này, không phải nguồn hỏng. Cần cho lưu lượng đi vòng ra ngoài (VPN " +
+    "hoặc máy chủ trung gian) thì mới gọi được."
+  );
+}
+
 /** Doc thong diep loi de hien cho nguoi dung, ke ca khi loi khong phai tu API. */
 export function errorMessage(error: unknown): string {
   if (error instanceof ApiRequestError) return error.message;

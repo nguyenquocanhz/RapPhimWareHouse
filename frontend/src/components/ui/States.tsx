@@ -27,26 +27,41 @@ export function EmptyState({
   );
 }
 
-/** Khoi hien khi goi API that bai, kem goi y khac phuc. */
-export function ErrorState({ message }: { message: string }) {
+/**
+ * Khoi hien khi goi API that bai.
+ *
+ * <p>Goi y khac phuc chi hien khi that su khong goi duoc backend. Truoc day no hien
+ * voi moi loi - ke ca khi backend dang chay ngon lanh va chinh no bao loi tu nguon
+ * ben ngoai - lam nguoi dung di kiem tra nham cho.</p>
+ *
+ * <p>Cung khong con ghi dia chi backend nua: trinh duyet khong goi thang backend bao
+ * gio, nen mot dia chi nhu localhost:8080 vua sai voi ban chay bang Docker, vua khong
+ * bam vao duoc.</p>
+ */
+export function ErrorState({
+  message,
+  unreachable = false,
+  hint,
+}: {
+  message: string;
+  /** Loi la do khong ket noi duoc toi backend, khong phai loi tu nguon ben ngoai. */
+  unreachable?: boolean;
+  /** Loi nhac rieng cho tung truong hop, vi du nguon bi chan o tang mang. */
+  hint?: string;
+}) {
   return (
     <div className="rounded-xl border border-border bg-surface px-6 py-10">
       <h2 className="text-lg font-medium text-fg">Không tải được dữ liệu</h2>
       <p className="mt-2 text-sm text-muted">{message}</p>
-      <p className="mt-4 text-sm text-muted">
-        Kiểm tra backend đã chạy tại{" "}
-        <code className="rounded bg-surface-hover px-1.5 py-0.5 text-fg">http://localhost:8080</code>{" "}
-        chưa. Có thể xem trạng thái tại{" "}
-        <a
-          href="http://localhost:8080/actuator/health"
-          target="_blank"
-          rel="noreferrer"
-          className="underline"
-        >
-          /actuator/health
-        </a>
-        .
-      </p>
+
+      {unreachable && (
+        <p className="mt-4 text-sm text-muted">
+          Máy chủ API không trả lời. Kiểm tra xem nó đã chạy chưa, và xem log nếu bạn
+          đang tự chạy bằng Docker.
+        </p>
+      )}
+
+      {hint && <p className="mt-4 text-sm text-muted">{hint}</p>}
     </div>
   );
 }

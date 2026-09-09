@@ -17,6 +17,7 @@ interface Status {
   customCount: number;
   customEnabledCount: number;
   tmdbConfigured: boolean;
+  tmdbKeyShape: string;
   homelabConfigured: boolean;
   adminConfigured: boolean;
 }
@@ -108,6 +109,14 @@ export function Dashboard({
           name="tmdbAccessToken"
           hint="Token đọc v4 của TheMovieDB."
           on={status.tmdbConfigured}
+          warning={
+            status.tmdbKeyShape === "v3"
+              ? "Đang giữ khoá v3 chứ không phải token v4, hệ thống tự gọi theo kiểu v3 nên " +
+                "vẫn chạy. Muốn dùng v4 thì lấy dòng “API Read Access Token” bên TheMovieDB."
+              : status.tmdbKeyShape === "khong ro"
+                ? "Khoá không giống token v4 lẫn khoá v3. Có thể đã dán thiếu hoặc lẫn khoảng trắng."
+                : undefined
+          }
           token={token}
           writable={writable}
           onSaved={onSaved}
@@ -152,6 +161,7 @@ function KeyCard({
   name,
   hint,
   on,
+  warning,
   token,
   writable,
   onSaved,
@@ -160,6 +170,8 @@ function KeyCard({
   name: string;
   hint: string;
   on: boolean;
+  /** Khoa da dat nhung nhin la biet sai; van hien dau tich vi no co dat that. */
+  warning?: string;
   token: string;
   writable: boolean;
   onSaved: (message: string) => void;
@@ -203,6 +215,12 @@ function KeyCard({
         </span>
         {on ? "Đã cấu hình" : "Chưa cấu hình"}
       </p>
+
+      {warning && (
+        <p className="mt-1.5 rounded-lg bg-chip px-2 py-1.5 text-xs leading-relaxed text-fg">
+          {warning}
+        </p>
+      )}
 
       {open ? (
         <form

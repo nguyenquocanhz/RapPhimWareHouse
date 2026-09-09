@@ -37,6 +37,12 @@ import java.util.function.Function;
 public class TmdbClient {
 
     private static final Logger log = LoggerFactory.getLogger(TmdbClient.class);
+
+    /** So lan goi toi da khi bi cat o tang mang. */
+    private static final int NETWORK_ATTEMPTS = 4;
+
+    /** Cho bay nhieu mili giay truoc lan thu hai, roi gap len theo so lan. */
+    private static final long NETWORK_BACKOFF_MS = 150;
     private static final String PROVIDER_CODE = "tmdb";
 
     /** Lay them dien vien va dinh danh ngoai trong cung mot lan goi. */
@@ -68,7 +74,7 @@ public class TmdbClient {
     }
 
     public boolean isConfigured() {
-        return settings.tmdbAccessToken() != null || settings.tmdbApiKey() != null;
+        return settings.tmdbBearerToken() != null || settings.tmdbQueryKey() != null;
     }
 
     /**
@@ -168,8 +174,9 @@ public class TmdbClient {
      * request chu khong gan san vao client, vi no doi duoc tren trang quan tri.</p>
      */
     private UriBuilder withAuth(UriBuilder builder) {
-        if (settings.tmdbAccessToken() == null && settings.tmdbApiKey() != null) {
-            return builder.queryParam("api_key", settings.tmdbApiKey());
+        String key = settings.tmdbQueryKey();
+        if (settings.tmdbBearerToken() == null && key != null) {
+            return builder.queryParam("api_key", key);
         }
         return builder;
     }
@@ -193,13 +200,49 @@ public class TmdbClient {
         };
     }
 
+    /**
+     * Goi TMDB, thu lai vai lan khi bi cat o tang mang.
+     *
+     * <p>Duong ra TheMovieDB bi chan theo ten mien nhung chan khong deu: cung mot yeu
+     * cau lam lai vai lan thi co lan lot. Nen mot lan hong khong co nghia la hong that,
+     * va bao loi ngay lan dau la bo phi phan lon co hoi lay duoc du lieu.</p>
+     *
+     * <p>Chi thu lai voi loi mang. Bi tu choi khoa hay qua han muc thi lam lai bao nhieu
+     * lan cung the, ma con lam nang them phia TheMovieDB.</p>
+     */
     private <T> T call(Function<UriBuilder, URI> uriFunction, Class<T> responseType) {
+        UpstreamException last = null;
+        for (int attempt = 1; attempt <= NETWORK_ATTEMPTS; attempt++) {
+            try {
+                return callOnce(uriFunction, responseType);
+            } catch (UpstreamException ex) {
+                if (!UpstreamException.BLOCKED.equals(ex.getCode())) {
+                    throw ex;
+                }
+                last = ex;
+                log.debug("TMDB bi cat lan {}/{}", attempt, NETWORK_ATTEMPTS);
+                pause(attempt);
+            }
+        }
+        throw last;
+    }
+
+    /** Nghi mot chut giua hai lan thu, moi lan mot lau hon. */
+    private void pause(int attempt) {
+        try {
+            Thread.sleep(NETWORK_BACKOFF_MS * attempt);
+        } catch (InterruptedException interrupted) {
+            Thread.currentThread().interrupt();
+        }
+    }
+
+    private <T> T callOnce(Function<UriBuilder, URI> uriFunction, Class<T> responseType) {
         try {
             var spec = client.get().uri(uriFunction::apply);
 
             // Token v4 gan theo tung request chu khong gan san vao client: no doi duoc
             // tren trang quan tri, ma client thi chi dung mot lan luc khoi dong.
-            String token = settings.tmdbAccessToken();
+            String token = settings.tmdbBearerToken();
             if (token != null) {
                 spec = spec.header(org.springframework.http.HttpHeaders.AUTHORIZATION,
                         "Bearer " + token);
@@ -207,15 +250,29 @@ public class TmdbClient {
 
             return spec
                     .retrieve()
-                    .onStatus(HttpStatusCode::is4xxClientError, (request, response) -> {
-                        // TMDB tra 404 kem body JSON khi khong co ban ghi - coi nhu du lieu rong.
+                    // Chi 404 moi la "khong co ban ghi". Truoc day nuot ca 4xx, nen
+                    // token sai (401) hay qua han muc (429) deu hien ra thanh "0 phim" -
+                    // nguoi dung di chinh bo loc trong khi loi nam o cho khac han.
+                    .onStatus(status -> status.value() == 404, (request, response) -> {
                     })
                     .body(responseType);
+        } catch (org.springframework.web.client.HttpClientErrorException ex) {
+            log.warn("TMDB tu choi: {}", ex.getStatusCode());
+            throw new UpstreamException(PROVIDER_CODE, explain(ex), ex);
         } catch (RestClientException ex) {
             log.warn("Goi TMDB that bai: {}", ex.getMessage());
-            throw new UpstreamException(PROVIDER_CODE,
-                    "Khong lay duoc du lieu tu TheMovieDB: " + ex.getMessage(), ex);
+            throw UpstreamException.network(PROVIDER_CODE, "TheMovieDB", ex);
         }
+    }
+
+    /** Doi ma loi cua TMDB thanh cau noi ro nguoi dung phai lam gi. */
+    private String explain(org.springframework.web.client.HttpClientErrorException ex) {
+        return switch (ex.getStatusCode().value()) {
+            case 401 -> "TheMovieDB từ chối khoá. Kiểm tra lại token trong trang quản trị.";
+            case 403 -> "TheMovieDB chặn yêu cầu này. Khoá có thể chưa đủ quyền.";
+            case 429 -> "Gọi TheMovieDB quá nhiều, hãy chờ một lát rồi thử lại.";
+            default -> "TheMovieDB trả về lỗi " + ex.getStatusCode().value() + ".";
+        };
     }
 
     // ------------------------------------------------------------------ chuyen doi
