@@ -60,6 +60,15 @@ fi
 say "Gửi mã nguồn"
 # Bo cac thu muc sinh ra khi build va tep cau hinh rieng: .env tren may dich do nguoi
 # dung tu giu, ghi de len la mat khoa.
+
+# Xoa ma nguon cu truoc khi gui ban moi.
+#
+# Giai nen tar chi ghi de len tep dang co, no khong xoa tep da bi xoa o ban moi. Da
+# gap that: doi ten mot trang roi deploy, trang cu van con tren may dich va van build
+# vao anh. Chi xoa dung cac thu muc chua ma nguon - .env cua nguoi dung nam o goc va
+# duoc giu nguyen.
+ssh_run "cd ~/$REMOTE_DIR 2>/dev/null && rm -rf backend frontend docs || true"
+
 tar czf - -C "$HERE" \
   --exclude=node_modules \
   --exclude=target \
