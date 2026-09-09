@@ -21,7 +21,17 @@ interface Status {
   adminConfigured: boolean;
 }
 
-export function Dashboard({ round }: { round: number }) {
+export function Dashboard({
+  round,
+  token,
+  writable,
+  onSaved,
+}: {
+  round: number;
+  token: string;
+  writable: boolean;
+  onSaved: (message: string) => void;
+}) {
   const [status, setStatus] = useState<Status | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -84,15 +94,23 @@ export function Dashboard({ round }: { round: number }) {
               : `${status.customCount - status.customEnabledCount} đang tắt`
           }
         />
-        <Flag
+        <KeyCard
           label="Kho phim riêng"
+          name="zcloudApiKey"
+          hint="Khoá x-api-key của ZCloud."
           on={status.homelabConfigured}
-          note={status.homelabConfigured ? "Đã cắm khoá ZCloud" : "Chưa đặt ZCLOUD_API_KEY"}
+          token={token}
+          writable={writable}
+          onSaved={onSaved}
         />
-        <Flag
+        <KeyCard
           label="Metadata TMDB"
+          name="tmdbAccessToken"
+          hint="Token đọc v4 của TheMovieDB."
           on={status.tmdbConfigured}
-          note={status.tmdbConfigured ? "Dùng được cho file NFO" : "Chưa đặt TMDB_ACCESS_TOKEN"}
+          token={token}
+          writable={writable}
+          onSaved={onSaved}
         />
       </div>
 
@@ -119,7 +137,58 @@ function Card({ label, value, note }: { label: string; value: string; note: stri
   );
 }
 
-function Flag({ label, on, note }: { label: string; on: boolean; note: string }) {
+/**
+ * The cau hinh sua duoc ngay tai cho.
+ *
+ * <p>Truoc day the nay chi bao "chua cau hinh" roi de do - muon sua phai vao may chu,
+ * sua .env va khoi dong lai. Chi ra van de ma khong co cho sua thi chi la mot loi
+ * nhac phien.</p>
+ *
+ * <p>O nhap luon rong: gia tri da luu khong bao gio duoc doc nguoc ra, go vao la thay
+ * gia tri cu.</p>
+ */
+function KeyCard({
+  label,
+  name,
+  hint,
+  on,
+  token,
+  writable,
+  onSaved,
+}: {
+  label: string;
+  name: string;
+  hint: string;
+  on: boolean;
+  token: string;
+  writable: boolean;
+  onSaved: (message: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [value, setValue] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  async function submit(next: string) {
+    setBusy(true);
+    try {
+      const response = await fetch("/api/admin/settings", {
+        method: "POST",
+        headers: { "content-type": "application/json", "x-admin-token": token },
+        body: JSON.stringify({ name, value: next }),
+      });
+      const body = await response.json();
+      if (!response.ok) throw new Error(body?.message ?? "Không lưu được.");
+
+      setValue("");
+      setOpen(false);
+      onSaved(next ? `Đã lưu ${label}.` : `Đã xoá khoá ${label}.`);
+    } catch (cause) {
+      onSaved(cause instanceof Error ? cause.message : "Không lưu được.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <div className="rounded-xl border border-border px-4 py-3">
       <p className="text-sm text-muted">{label}</p>
@@ -135,7 +204,64 @@ function Flag({ label, on, note }: { label: string; on: boolean; note: string })
         {on ? "Đã cấu hình" : "Chưa cấu hình"}
       </p>
 
-      <p className="mt-1 text-xs text-muted">{note}</p>
+      {open ? (
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            submit(value);
+          }}
+          className="mt-2"
+        >
+          <input
+            autoFocus
+            type="password"
+            value={value}
+            onChange={(event) => setValue(event.target.value)}
+            placeholder="Dán khoá vào đây"
+            disabled={busy}
+            className="w-full rounded-lg border border-border bg-canvas px-2 py-1.5 text-sm text-fg outline-none placeholder:text-muted focus:border-fg/40"
+          />
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            <button
+              type="submit"
+              disabled={busy || value.trim() === ""}
+              className="rounded-full bg-chip-active px-3 py-1 text-xs font-medium text-chip-active-fg transition hover:opacity-90 disabled:opacity-40"
+            >
+              Lưu
+            </button>
+            {on && (
+              <button
+                type="button"
+                onClick={() => submit("")}
+                disabled={busy}
+                className="rounded-full px-3 py-1 text-xs text-muted transition hover:bg-surface-hover hover:text-fg disabled:opacity-40"
+              >
+                Xoá khoá
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              className="rounded-full px-3 py-1 text-xs text-muted transition hover:bg-surface-hover hover:text-fg"
+            >
+              Huỷ
+            </button>
+          </div>
+        </form>
+      ) : (
+        <div className="mt-1 flex items-center justify-between gap-2">
+          <span className="text-xs text-muted">{hint}</span>
+          <button
+            type="button"
+            onClick={() => setOpen(true)}
+            disabled={!writable || token === ""}
+            title={token === "" ? "Nhập khoá quản trị ở trên trước" : undefined}
+            className="shrink-0 rounded-full bg-chip px-2.5 py-1 text-xs font-medium text-fg transition hover:bg-chip-hover disabled:opacity-40"
+          >
+            {on ? "Đổi" : "Đặt"}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

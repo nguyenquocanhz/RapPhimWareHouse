@@ -55,13 +55,20 @@ public class TmdbClient {
     private final RestClient client;
     private final TmdbProperties properties;
 
-    public TmdbClient(@Qualifier("tmdbRestClient") RestClient client, TmdbProperties properties) {
+    /** Khoa co the doi tren trang quan tri nen phai hoi moi lan dung, khong giu lai. */
+    private final com.rapphim.warehouse.service.SettingsService settings;
+
+    public TmdbClient(@Qualifier("tmdbRestClient") RestClient client,
+                      TmdbProperties properties,
+                      @org.springframework.context.annotation.Lazy
+                      com.rapphim.warehouse.service.SettingsService settings) {
         this.client = client;
         this.properties = properties;
+        this.settings = settings;
     }
 
     public boolean isConfigured() {
-        return properties.isConfigured();
+        return settings.tmdbAccessToken() != null || settings.tmdbApiKey() != null;
     }
 
     /**
@@ -154,16 +161,21 @@ public class TmdbClient {
 
     // ------------------------------------------------------------------ goi nguon
 
-    /** Khoa v3 di kem query param; token v4 da nam san trong header cua client. */
+    /**
+     * Khoa v3 di kem query param.
+     *
+     * <p>Chi dung khi khong co token v4 - token v4 di bang header, gan trong tung
+     * request chu khong gan san vao client, vi no doi duoc tren trang quan tri.</p>
+     */
     private UriBuilder withAuth(UriBuilder builder) {
-        if (!properties.usesBearerToken() && properties.apiKey() != null) {
-            return builder.queryParam("api_key", properties.apiKey());
+        if (settings.tmdbAccessToken() == null && settings.tmdbApiKey() != null) {
+            return builder.queryParam("api_key", settings.tmdbApiKey());
         }
         return builder;
     }
 
     private void requireConfigured() {
-        if (!properties.isConfigured()) {
+        if (!isConfigured()) {
             throw new TmdbNotConfiguredException();
         }
     }
@@ -183,8 +195,17 @@ public class TmdbClient {
 
     private <T> T call(Function<UriBuilder, URI> uriFunction, Class<T> responseType) {
         try {
-            return client.get()
-                    .uri(uriFunction::apply)
+            var spec = client.get().uri(uriFunction::apply);
+
+            // Token v4 gan theo tung request chu khong gan san vao client: no doi duoc
+            // tren trang quan tri, ma client thi chi dung mot lan luc khoi dong.
+            String token = settings.tmdbAccessToken();
+            if (token != null) {
+                spec = spec.header(org.springframework.http.HttpHeaders.AUTHORIZATION,
+                        "Bearer " + token);
+            }
+
+            return spec
                     .retrieve()
                     .onStatus(HttpStatusCode::is4xxClientError, (request, response) -> {
                         // TMDB tra 404 kem body JSON khi khong co ban ghi - coi nhu du lieu rong.

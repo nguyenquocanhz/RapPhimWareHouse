@@ -49,22 +49,20 @@ public class RestClientConfig {
     }
 
     /**
-     * Client cho TheMovieDB. Token v4 gan san vao header; khoa v3 duoc
-     * {@code TmdbClient} them vao query param cua tung request.
+     * Client cho TheMovieDB.
+     *
+     * <p>Khong gan thong tin xac thuc o day: khoa TMDB doi duoc tren trang quan tri,
+     * ma client thi chi dung mot lan luc khoi dong. {@code TmdbClient} tu gan token
+     * hoac khoa vao tung request.</p>
      */
     @Bean
     public RestClient tmdbRestClient(RestClient.Builder builder, ClientHttpRequestFactory factory) {
-        RestClient.Builder configured = builder.clone()
+        return builder.clone()
                 .requestFactory(factory)
                 .baseUrl(tmdbProperties.baseUrl())
                 .defaultHeader(HttpHeaders.USER_AGENT, USER_AGENT)
-                .defaultHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
-
-        if (tmdbProperties.usesBearerToken()) {
-            configured = configured.defaultHeader(
-                    HttpHeaders.AUTHORIZATION, "Bearer " + tmdbProperties.accessToken());
-        }
-        return configured.build();
+                .defaultHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE)
+                .build();
     }
 
     /**

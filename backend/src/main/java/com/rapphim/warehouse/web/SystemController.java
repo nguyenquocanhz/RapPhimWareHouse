@@ -2,8 +2,8 @@ package com.rapphim.warehouse.web;
 
 import com.rapphim.warehouse.common.ApiResponse;
 import com.rapphim.warehouse.config.AdminProperties;
-import com.rapphim.warehouse.config.TmdbProperties;
-import com.rapphim.warehouse.config.ZCloudProperties;
+import com.rapphim.warehouse.provider.homelab.ZCloudClient;
+import com.rapphim.warehouse.provider.tmdb.TmdbClient;
 import com.rapphim.warehouse.dto.ListType;
 import com.rapphim.warehouse.dto.ProviderType;
 import com.rapphim.warehouse.provider.ProviderRegistry;
@@ -30,20 +30,26 @@ public class SystemController {
 
     private final ProviderRegistry registry;
     private final CustomSourceService customSources;
-    private final TmdbProperties tmdb;
-    private final ZCloudProperties zcloud;
     private final AdminProperties admin;
+
+    /*
+     * Hoi thang hai client thay vi doc cau hinh goc: khoa dat tren trang quan tri
+     * duoc uu tien hon bien moi truong, ma chi hai client nay biet dieu do. Doc cau
+     * hinh goc thi dat khoa xong bang tong quan van bao "chua cau hinh".
+     */
+    private final ZCloudClient zcloud;
+    private final TmdbClient tmdb;
 
     public SystemController(ProviderRegistry registry,
                             CustomSourceService customSources,
-                            TmdbProperties tmdb,
-                            ZCloudProperties zcloud,
-                            AdminProperties admin) {
+                            AdminProperties admin,
+                            ZCloudClient zcloud,
+                            TmdbClient tmdb) {
         this.registry = registry;
         this.customSources = customSources;
-        this.tmdb = tmdb;
-        this.zcloud = zcloud;
         this.admin = admin;
+        this.zcloud = zcloud;
+        this.tmdb = tmdb;
     }
 
     /**

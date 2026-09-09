@@ -7,6 +7,7 @@ import com.rapphim.warehouse.exception.AdminNotConfiguredException;
 import com.rapphim.warehouse.exception.ResourceNotFoundException;
 import com.rapphim.warehouse.exception.UnauthorizedException;
 import com.rapphim.warehouse.service.CustomSourceService;
+import com.rapphim.warehouse.service.SettingsService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -32,19 +33,56 @@ import java.util.Map;
  * ai cung doi duoc nguon phim la moi cho ke khac tro he thong sang dia chi bat ky.</p>
  */
 @RestController
-@RequestMapping("/api/v1/admin/sources")
+@RequestMapping("/api/v1/admin")
 @Tag(name = "Quan tri", description = "Them va sua nguon phim luc dang chay")
 public class AdminController {
 
     private final CustomSourceService sources;
     private final AdminProperties properties;
+    private final SettingsService settings;
 
-    public AdminController(CustomSourceService sources, AdminProperties properties) {
+    public AdminController(CustomSourceService sources,
+                           AdminProperties properties,
+                           SettingsService settings) {
         this.sources = sources;
         this.properties = properties;
+        this.settings = settings;
     }
 
-    @GetMapping
+    /**
+     * Tinh trang cac khoa dat duoc tren giao dien.
+     *
+     * <p>Chi bao da dat hay chua va dat o dau. Khong tra ve gia tri: doc nguoc khoa ra
+     * thi ai mo duoc trang quan tri cung lay duoc khoa that.</p>
+     */
+    @GetMapping("/settings")
+    @Operation(summary = "Tinh trang cac khoa, khong kem gia tri")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> settings() {
+        return ResponseEntity.ok(ApiResponse.ok(Map.of(
+                "items", settings.status(),
+                "writable", properties.isConfigured())));
+    }
+
+    @PostMapping("/settings")
+    @Operation(summary = "Dat hoac xoa mot khoa")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> saveSetting(
+            @RequestHeader(value = "X-Admin-Token", required = false) String token,
+            @RequestBody Map<String, String> body) {
+
+        authorise(token);
+
+        String name = body.get("name");
+        if (name == null || name.isBlank()) {
+            throw new IllegalArgumentException("Thiếu tên khoá cần đặt.");
+        }
+        settings.put(name, body.get("value"));
+
+        return ResponseEntity.ok(ApiResponse.ok(Map.of(
+                "items", settings.status(),
+                "writable", true)));
+    }
+
+    @GetMapping("/sources")
     @Operation(summary = "Danh sach nguon tu them")
     public ResponseEntity<ApiResponse<Map<String, Object>>> list() {
         return ResponseEntity.ok(ApiResponse.ok(Map.of(
@@ -53,7 +91,7 @@ public class AdminController {
                 "writable", properties.isConfigured())));
     }
 
-    @PostMapping
+    @PostMapping("/sources")
     @Operation(summary = "Them hoac cap nhat mot nguon")
     public ResponseEntity<ApiResponse<CustomSource>> save(
             @Parameter(description = "Khoa quan tri", required = true)
@@ -64,7 +102,7 @@ public class AdminController {
         return ResponseEntity.ok(ApiResponse.ok(sources.save(source)));
     }
 
-    @PostMapping("/probe")
+    @PostMapping("/sources/probe")
     @Operation(summary = "Goi thu mot nguon truoc khi luu")
     public ResponseEntity<ApiResponse<Map<String, String>>> probe(
             @RequestHeader(value = "X-Admin-Token", required = false) String token,
@@ -80,7 +118,7 @@ public class AdminController {
         }
     }
 
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/sources/{id}")
     @Operation(summary = "Xoa mot nguon")
     public ResponseEntity<ApiResponse<List<CustomSource>>> remove(
             @RequestHeader(value = "X-Admin-Token", required = false) String token,

@@ -389,6 +389,24 @@ trả về giá trị khoá nào - nó chỉ cần nhắc bạn còn thiếu gì
 Lối vào nằm ở nhóm **Quản trị** cuối sidebar, tách khỏi các mục xem phim vì đây là chỗ
 sửa cấu hình của cả hệ thống chứ không phải một mục để duyệt phim.
 
+#### Đặt khoá ngay trên giao diện
+
+Bảng tổng quan không chỉ báo "chưa cấu hình" rồi để đó - bấm **Đặt** trên thẻ là nhập
+được khoá ZCloud hoặc token TMDB ngay, không phải vào máy chủ sửa `.env` rồi khởi động
+lại. Chỉ ra vấn đề mà không có chỗ sửa thì chỉ là một lời nhắc phiền.
+
+- **Khoá đặt trên giao diện được ưu tiên hơn biến môi trường.** Chưa đặt gì thì vẫn
+  dùng biến môi trường như cũ, nên cách triển khai bằng Docker không đổi. Thẻ cho biết
+  khoá đang lấy từ đâu (`cms` hay `env`) để bạn biết sửa chỗ nào.
+- **Khoá không bao giờ đọc ngược ra được.** API chỉ trả về *đã đặt hay chưa* và *lấy từ
+  đâu*; ô nhập luôn rỗng, gõ vào là thay giá trị cũ. Đọc ngược giá trị ra thì ai mở
+  được trang quản trị cũng lấy được khoá thật.
+- Token TMDB vì thế phải **gắn vào từng request** thay vì gắn sẵn lúc dựng client -
+  client chỉ dựng một lần lúc khởi động, còn khoá thì đổi được bất cứ lúc nào.
+
+Toàn bộ đường này đã chạy thật: đặt khoá sai cho ZCloud thì nguồn trả `502` kèm đúng
+lời của kho (`401 Chưa đăng nhập`) - tức là khoá thật sự đi tới nơi.
+
 #### Ba quyết định đáng nói
 
 **Lưu ra tệp JSON, không thêm cơ sở dữ liệu.** Cả hệ thống không có cơ sở dữ liệu nào -
@@ -432,6 +450,9 @@ khởi động lại là mất. Giờ ghi xuống đĩa trước, thành công m
 | Khởi động lại | nguồn đã lưu được nạp lại từ tệp |
 | Mã không tồn tại | `400` kèm danh sách nguồn đang có |
 | Dựng lại container | nguồn vẫn còn, vẫn phát được phim |
+| Bật/tắt nguồn | tắt thì mã biến khỏi danh sách và gọi vào bị `400`, bật lại chạy tiếp |
+| Đặt khoá từ giao diện | bảng tổng quan đổi theo, khoá tới được nơi cần |
+| Tên khoá lạ | `400` kèm lời nhắc |
 
 ### Kho phim riêng trên homelab
 

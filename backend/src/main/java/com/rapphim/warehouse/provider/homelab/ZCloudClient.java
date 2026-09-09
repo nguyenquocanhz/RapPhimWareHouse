@@ -35,6 +35,9 @@ public class ZCloudClient {
     private final RestClient client;
     private final ZCloudProperties properties;
 
+    /** Khoa co the doi tren trang quan tri nen phai hoi moi lan dung, khong giu lai. */
+    private final com.rapphim.warehouse.service.SettingsService settings;
+
     /**
      * Cookie phien lay tu lan dang nhap gan nhat.
      *
@@ -43,14 +46,18 @@ public class ZCloudClient {
      */
     private final AtomicReference<String> session = new AtomicReference<>();
 
-    public ZCloudClient(RestClient zcloudRestClient, ZCloudProperties properties) {
+    public ZCloudClient(RestClient zcloudRestClient,
+                        ZCloudProperties properties,
+                        @org.springframework.context.annotation.Lazy
+                        com.rapphim.warehouse.service.SettingsService settings) {
         this.client = zcloudRestClient;
         this.properties = properties;
+        this.settings = settings;
     }
 
     /** Kho da san sang de goi chua. */
     public boolean isConfigured() {
-        return properties.isConfigured();
+        return settings.zcloudApiKey() != null || properties.password() != null;
     }
 
     /**
@@ -183,8 +190,9 @@ public class ZCloudClient {
      * du; khong tra ve gia tri de khoi vuong vao generic tu tham chieu cua no.</p>
      */
     private void applyAuth(RestClient.RequestHeadersSpec<?> spec) {
-        if (properties.usesApiKey()) {
-            spec.header(API_KEY_HEADER, properties.apiKey());
+        String key = settings.zcloudApiKey();
+        if (key != null) {
+            spec.header(API_KEY_HEADER, key);
             return;
         }
 

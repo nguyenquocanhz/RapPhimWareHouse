@@ -105,6 +105,30 @@ export function SourceManager() {
       reload();
     });
 
+  /**
+   * Bat hoac tat mot nguon ma khong xoa khai bao.
+   *
+   * <p>Gui lai chinh nguon do voi co dao nguoc: backend nhan cung mot ma thi ghi de,
+   * va dung/thoi dung nguon theo co - khong can them endpoint rieng.</p>
+   */
+  const toggle = (source: Source) =>
+    run(async () => {
+      const next = !source.enabled;
+      await call("sources", "POST", { ...source, enabled: next });
+
+      // Doi ngay trong danh sach dang hien, khong doi lan doc lai.
+      //
+      // `reload()` chi dat lich doc lai; tu luc luu xong den luc du lieu moi ve, cong
+      // tac van ve trang thai cu - bam lan nua trong khoang do se gui lai dung gia tri
+      // vua gui, tuc la khong doi gi ca.
+      setSources((current) =>
+        current.map((item) => (item.id === source.id ? { ...item, enabled: next } : item)),
+      );
+
+      setNote({ kind: "ok", text: next ? `Đã bật ${source.name}.` : `Đã tắt ${source.name}.` });
+      reload();
+    });
+
   const remove = (id: string) =>
     run(async () => {
       await call(`sources/${id}`, "DELETE");
@@ -123,7 +147,15 @@ export function SourceManager() {
       </p>
 
       {/* Bang tong quan doc lai moi lan danh sach nguon doi */}
-      <Dashboard round={round} />
+      <Dashboard
+        round={round}
+        token={token}
+        writable={writable}
+        onSaved={(text) => {
+          setNote({ kind: "ok", text });
+          reload();
+        }}
+      />
 
       {!writable && (
         <p className="mt-4 max-w-2xl rounded-xl border border-border bg-surface px-4 py-3 text-sm text-muted">
@@ -177,11 +209,29 @@ export function SourceManager() {
                 <p className="truncate text-xs text-muted">{source.baseUrl}</p>
               </div>
 
-              <span
-                className={`shrink-0 rounded-full px-2 py-0.5 text-xs ${
-                  source.enabled ? "bg-chip-active text-chip-active-fg" : "bg-chip text-muted"
+              {/* Cong tac bat/tat: tat di thi nguon khong con phuc vu nhung khai bao
+                  van con, khong phai go lai tu dau khi muon dung tiep */}
+              <button
+                type="button"
+                role="switch"
+                aria-checked={source.enabled}
+                onClick={() => toggle(source)}
+                disabled={!writable || busy || token === ""}
+                aria-label={`${source.enabled ? "Tắt" : "Bật"} nguồn ${source.name}`}
+                title={source.enabled ? "Đang bật, bấm để tắt" : "Đang tắt, bấm để bật"}
+                className={`relative h-6 w-11 shrink-0 rounded-full transition disabled:opacity-40 ${
+                  source.enabled ? "bg-chip-active" : "bg-chip"
                 }`}
               >
+                <span
+                  aria-hidden="true"
+                  className={`absolute top-1 size-4 rounded-full bg-canvas transition-all ${
+                    source.enabled ? "left-6" : "left-1"
+                  }`}
+                />
+              </button>
+
+              <span className="w-16 shrink-0 text-xs text-muted">
                 {source.enabled ? "Đang bật" : "Đang tắt"}
               </span>
 
