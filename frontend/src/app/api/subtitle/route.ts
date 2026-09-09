@@ -13,7 +13,9 @@ export async function GET(request: NextRequest) {
     return new NextResponse("Thiếu tham số key.", { status: 400 });
   }
 
-  const base = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8080";
+  // Route handler chay tren server nen di duong noi bo, giong cac loi goi API khac.
+  const base =
+    process.env.API_INTERNAL_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8080";
   const target = `${base}/api/v1/homelab/subtitle?key=${encodeURIComponent(key)}`;
 
   try {

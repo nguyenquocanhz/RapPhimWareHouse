@@ -14,7 +14,9 @@ spring:
 
 rapphim:
   cors:
-    allowed-origins: http://localhost:3000,http://127.0.0.1:3000
+    # Chay bang Docker thi frontend khong con o localhost:3000 nua, nen dia chi duoc
+    # phep phai doi duoc tu ben ngoai.
+    allowed-origins: ${RAPPHIM_CORS_ORIGINS:http://localhost:3000,http://127.0.0.1:3000}
   provider:
     connect-timeout: 5s
     read-timeout: 20s
