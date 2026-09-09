@@ -86,6 +86,20 @@ public class GlobalExceptionHandler {
                 .body(ApiError.of(503, "TMDB_NOT_CONFIGURED", ex.getMessage(), request.getRequestURI()));
     }
 
+    @ExceptionHandler(AdminNotConfiguredException.class)
+    public ResponseEntity<ApiError> handleAdminNotConfigured(AdminNotConfiguredException ex,
+                                                             HttpServletRequest request) {
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body(ApiError.of(503, "ADMIN_NOT_CONFIGURED", ex.getMessage(), request.getRequestURI()));
+    }
+
+    @ExceptionHandler(UnauthorizedException.class)
+    public ResponseEntity<ApiError> handleUnauthorized(UnauthorizedException ex,
+                                                       HttpServletRequest request) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(ApiError.of(401, "UNAUTHORIZED", ex.getMessage(), request.getRequestURI()));
+    }
+
     @ExceptionHandler(UpstreamException.class)
     public ResponseEntity<ApiError> handleUpstream(UpstreamException ex, HttpServletRequest request) {
         log.error("Loi tu nguon '{}': {}", ex.getProvider(), ex.getMessage(), ex);

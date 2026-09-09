@@ -20,6 +20,17 @@ public interface MovieProvider {
     /** Nguon ma cai dat nay dai dien. */
     ProviderType type();
 
+    /**
+     * Ma dinh danh dung tren URL.
+     *
+     * <p>Cac nguon dung san lay thang ma cua {@link ProviderType}. Nguon do nguoi dung
+     * tu them thi khong nam trong enum duoc - enum co dinh luc bien dich - nen chung
+     * ghi de ham nay bang ma rieng.</p>
+     */
+    default String code() {
+        return type().code();
+    }
+
     /** Phim moi cap nhat, sap xep theo thoi diem cap nhat giam dan. */
     PageResponse<MovieSummary> latest(MovieQuery query);
 

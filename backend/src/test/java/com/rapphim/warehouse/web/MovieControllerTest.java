@@ -62,7 +62,7 @@ class MovieControllerTest {
     void latestReturnsWrappedPage() throws Exception {
         PageResponse<MovieSummary> page = PageResponse.of(
                 List.of(sampleMovie()), new PageMeta(1, 24, 100, 5), "kkphim");
-        given(movieService.latest(eq(ProviderType.KKPHIM), any(MovieQuery.class))).willReturn(page);
+        given(movieService.latest(eq("kkphim"), any(MovieQuery.class))).willReturn(page);
 
         mockMvc.perform(get("/api/v1/movies/latest").param("limit", "24"))
                 .andExpect(status().isOk())
@@ -79,7 +79,7 @@ class MovieControllerTest {
     void enumParametersAcceptSlugValues() throws Exception {
         PageResponse<MovieSummary> page = PageResponse.of(
                 List.of(sampleMovie()), new PageMeta(1, 24, 10, 1), "nguonc");
-        given(movieService.listByType(eq(ProviderType.NGUONC), eq(ListType.PHIM_BO), any(MovieQuery.class)))
+        given(movieService.listByType(eq("nguonc"), eq(ListType.PHIM_BO), any(MovieQuery.class)))
                 .willReturn(page);
 
         mockMvc.perform(get("/api/v1/movies")
@@ -92,7 +92,7 @@ class MovieControllerTest {
     @Test
     @DisplayName("Slug khong ton tai tra ve 404 kem ma MOVIE_NOT_FOUND")
     void unknownSlugReturnsNotFound() throws Exception {
-        given(movieService.findBySlug(eq(ProviderType.KKPHIM), eq("khong-co")))
+        given(movieService.findBySlug(eq("kkphim"), eq("khong-co")))
                 .willThrow(new ResourceNotFoundException("MOVIE_NOT_FOUND", "Khong tim thay phim"));
 
         mockMvc.perform(get("/api/v1/movies/khong-co"))
@@ -105,6 +105,12 @@ class MovieControllerTest {
     @Test
     @DisplayName("Nguon khong hop le tra ve 400 kem ma INVALID_PARAMETER")
     void invalidProviderReturnsBadRequest() throws Exception {
+        // Tham so nguon la chuoi chu khong con la enum, vi nguon do nguoi dung tu them
+        // khong the nam trong enum. Viec kiem tra ma hop le nam o ProviderRegistry, nen
+        // o day phai gia lap dung cho do nem loi thay vi trong cho tang chuyen doi.
+        given(movieService.latest(eq("khong-ton-tai"), any(MovieQuery.class)))
+                .willThrow(new IllegalArgumentException("Nguon 'khong-ton-tai' khong hop le"));
+
         mockMvc.perform(get("/api/v1/movies/latest").param("provider", "khong-ton-tai"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("INVALID_PARAMETER"));

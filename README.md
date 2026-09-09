@@ -353,6 +353,49 @@ Docker 29.7.2):
 Các container sẵn có trên máy (`webui-film-*`, `socialdownloader`, `studocu`…) không bị
 đụng tới; cổng 3000 và 8081 đều trống trước khi dùng.
 
+### Trang quản trị: tự thêm nguồn phim
+
+`/quan-tri` cho phép thêm nguồn mà **không phải sửa mã nguồn rồi build lại**. Khai báo
+địa chỉ là chạy được ngay.
+
+Việc này khả thi vì phần lớn trang phim Việt là bản sao API của KKPhim, chỉ khác tên
+miền. Nên một nguồn mới chỉ cần một `RestClient` trỏ sang địa chỉ khác, còn cách đọc
+dữ liệu thì dùng lại nguyên của [`KKPhimProvider`](backend/src/main/java/com/rapphim/warehouse/provider/kkphim/KKPhimProvider.java).
+
+Nút **Gọi thử** đọc thử 5 phim trước khi lưu, để biết địa chỉ đã đúng chưa thay vì lưu
+vào rồi mới phát hiện hỏng.
+
+#### Ba quyết định đáng nói
+
+**Lưu ra tệp JSON, không thêm cơ sở dữ liệu.** Cả hệ thống không có cơ sở dữ liệu nào -
+mọi thứ đều đọc từ nguồn ngoài rồi đệm lại. Thêm hẳn một cơ sở dữ liệu chỉ để giữ vài
+dòng khai báo là không đáng; một tệp JSON gắn vào volume của Docker là đủ bền, và mở ra
+sửa tay được.
+
+**Tham số `provider` đổi từ enum sang chuỗi.** Nguồn người dùng tự thêm không thể nằm
+trong `ProviderType` - enum cố định lúc biên dịch. Việc kiểm tra mã hợp lệ vì thế
+chuyển từ tầng chuyển đổi tham số xuống `ProviderRegistry`; mã sai vẫn ra 400 kèm danh
+sách các nguồn đang có.
+
+**Khoá quản trị không nằm trong trình duyệt.** Nó chỉ sống trong bộ nhớ của tab đang mở,
+đóng tab là mất. Đó là khoá cho phép đổi nơi lấy phim của cả hệ thống; để trong
+`localStorage` thì bất kỳ đoạn mã nào chạy trên trang cũng đọc được. Chưa đặt
+`RAPPHIM_ADMIN_TOKEN` thì phần sửa đổi **tự tắt** và trang chỉ còn xem được - an toàn
+hơn là để mở cho ai cũng trỏ hệ thống sang địa chỉ bất kỳ.
+
+#### Đã kiểm
+
+| Kiểm | Kết quả |
+|---|---|
+| Không khoá / khoá sai | `401 UNAUTHORIZED` |
+| Chưa đặt `RAPPHIM_ADMIN_TOKEN` | `503 ADMIN_NOT_CONFIGURED`, trang chỉ xem được |
+| Mã trùng nguồn dựng sẵn | `400` kèm lời nhắc chọn mã khác |
+| Mã sai định dạng, địa chỉ không phải http | `400 VALIDATION_FAILED` kèm đúng tên trường |
+| Gọi thử nguồn | "Gọi được, đọc thử thấy 5 phim." |
+| Gọi API bằng mã nguồn mới | trả phim thật, `provider` đúng mã đó |
+| Khởi động lại | nguồn đã lưu được nạp lại từ tệp |
+| Mã không tồn tại | `400` kèm danh sách nguồn đang có |
+
 ### Kho phim riêng trên homelab
 
 Nguồn thứ ba, mã `homelab`, đọc kho phim tự lưu ở `192.168.100.169`. Đây là chỗ duy

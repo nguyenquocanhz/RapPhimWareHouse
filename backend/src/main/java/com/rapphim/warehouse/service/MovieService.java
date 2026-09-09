@@ -27,7 +27,7 @@ public class MovieService {
 
     @Cacheable(cacheNames = CacheConfig.MOVIE_LIST_CACHE,
             key = "'latest:' + #provider + ':' + #query.page() + ':' + #query.limit()")
-    public PageResponse<MovieSummary> latest(ProviderType provider, MovieQuery query) {
+    public PageResponse<MovieSummary> latest(String provider, MovieQuery query) {
         return resolve(provider).latest(query);
     }
 
@@ -35,14 +35,14 @@ public class MovieService {
             key = "'type:' + #provider + ':' + #listType + ':' + #query.page() + ':' + #query.limit()"
                     + " + ':' + #query.category() + ':' + #query.country() + ':' + #query.year()"
                     + " + ':' + #query.sortField() + ':' + #query.sortType()")
-    public PageResponse<MovieSummary> listByType(ProviderType provider, ListType listType, MovieQuery query) {
+    public PageResponse<MovieSummary> listByType(String provider, ListType listType, MovieQuery query) {
         return resolve(provider).listByType(listType, query);
     }
 
     @Cacheable(cacheNames = CacheConfig.MOVIE_LIST_CACHE,
             key = "'search:' + #provider + ':' + #keyword.toLowerCase()"
                     + " + ':' + #query.page() + ':' + #query.limit()")
-    public PageResponse<MovieSummary> search(ProviderType provider, String keyword, MovieQuery query) {
+    public PageResponse<MovieSummary> search(String provider, String keyword, MovieQuery query) {
         if (keyword == null || keyword.isBlank()) {
             throw new IllegalArgumentException("Tham so 'keyword' khong duoc de trong");
         }
@@ -52,21 +52,21 @@ public class MovieService {
     @Cacheable(cacheNames = CacheConfig.MOVIE_LIST_CACHE,
             key = "'category:' + #provider + ':' + #categorySlug + ':' + #query.page() + ':' + #query.limit()"
                     + " + ':' + #query.country() + ':' + #query.year()")
-    public PageResponse<MovieSummary> listByCategory(ProviderType provider, String categorySlug, MovieQuery query) {
+    public PageResponse<MovieSummary> listByCategory(String provider, String categorySlug, MovieQuery query) {
         return resolve(provider).listByCategory(categorySlug, query);
     }
 
     @Cacheable(cacheNames = CacheConfig.MOVIE_LIST_CACHE,
             key = "'country:' + #provider + ':' + #countrySlug + ':' + #query.page() + ':' + #query.limit()"
                     + " + ':' + #query.category() + ':' + #query.year()")
-    public PageResponse<MovieSummary> listByCountry(ProviderType provider, String countrySlug, MovieQuery query) {
+    public PageResponse<MovieSummary> listByCountry(String provider, String countrySlug, MovieQuery query) {
         return resolve(provider).listByCountry(countrySlug, query);
     }
 
     @Cacheable(cacheNames = CacheConfig.MOVIE_LIST_CACHE,
             key = "'year:' + #provider + ':' + #year + ':' + #query.page() + ':' + #query.limit()"
                     + " + ':' + #query.category() + ':' + #query.country()")
-    public PageResponse<MovieSummary> listByYear(ProviderType provider, int year, MovieQuery query) {
+    public PageResponse<MovieSummary> listByYear(String provider, int year, MovieQuery query) {
         if (year < 1900 || year > 2100) {
             throw new IllegalArgumentException("Nam '" + year + "' nam ngoai khoang hop le 1900-2100");
         }
@@ -77,14 +77,21 @@ public class MovieService {
      * @throws ResourceNotFoundException neu nguon khong co phim voi slug tuong ung
      */
     @Cacheable(cacheNames = CacheConfig.MOVIE_DETAIL_CACHE, key = "#provider + ':' + #slug")
-    public MovieDetail findBySlug(ProviderType provider, String slug) {
+    public MovieDetail findBySlug(String provider, String slug) {
         return resolve(provider).findBySlug(slug)
                 .orElseThrow(() -> new ResourceNotFoundException("MOVIE_NOT_FOUND",
                         "Khong tim thay phim voi slug '" + slug + "' tren nguon '"
-                                + resolve(provider).type().code() + "'"));
+                                + resolve(provider).code() + "'"));
     }
 
-    private MovieProvider resolve(ProviderType provider) {
+    /**
+     * Tim cai dat theo ma nguon.
+     *
+     * <p>Nhan chuoi chu khong nhan enum: nguon do nguoi dung tu them khong the nam
+     * trong enum - enum co dinh luc bien dich - nen viec kiem tra ma hop le duoc doi
+     * xuong cho registry, va ma sai van ra loi 400 nhu cu.</p>
+     */
+    private MovieProvider resolve(String provider) {
         return registry.get(provider);
     }
 }

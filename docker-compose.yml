@@ -32,6 +32,14 @@ services:
       # Metadata cho file NFO. Thieu thi cac endpoint TMDB tra 503, phan con lai chay.
       TMDB_ACCESS_TOKEN: ${TMDB_ACCESS_TOKEN:-}
       TMDB_API_KEY: ${TMDB_API_KEY:-}
+
+      # Trang quan tri: de trong thi chi xem duoc, khong sua duoc nguon.
+      RAPPHIM_ADMIN_TOKEN: ${ADMIN_TOKEN:-}
+      RAPPHIM_SOURCES_FILE: /app/data/custom-sources.json
+    volumes:
+      # Nguon tu them phai song qua lan dung lai container, neu khong thi dung lai
+      # anh moi la mat sach.
+      - rapphim-data:/app/data
     extra_hosts:
       # Cho phep goi nguoc ve dich vu dang chay tren chinh may chu (ZCloud).
       - "host.docker.internal:host-gateway"
@@ -54,6 +62,9 @@ services:
       - backend
     networks:
       - rapphim
+
+volumes:
+  rapphim-data:
 
 networks:
   rapphim:

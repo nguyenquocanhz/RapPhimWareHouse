@@ -66,7 +66,7 @@ public class MovieController {
             @RequestParam(defaultValue = "24") @Min(1) @Max(64) int limit,
 
             @Parameter(description = "Nguon du lieu", example = "kkphim")
-            @RequestParam(defaultValue = "kkphim") ProviderType provider) {
+            @RequestParam(defaultValue = "kkphim") String provider) {
 
         MovieQuery query = MovieQuery.of(page, limit);
         return ResponseEntity.ok(ApiResponse.ok(movieService.latest(provider, query)));
@@ -113,7 +113,7 @@ public class MovieController {
             @RequestParam(name = "sortType", defaultValue = "desc") String sortType,
 
             @Parameter(description = "Nguon du lieu", example = "kkphim")
-            @RequestParam(defaultValue = "kkphim") ProviderType provider) {
+            @RequestParam(defaultValue = "kkphim") String provider) {
 
         MovieQuery query = new MovieQuery(page, limit, category, country, year, sortField, sortType);
         return ResponseEntity.ok(ApiResponse.ok(movieService.listByType(provider, type, query)));
@@ -141,7 +141,7 @@ public class MovieController {
             @RequestParam(defaultValue = "24") @Min(1) @Max(64) int limit,
 
             @Parameter(description = "Nguon du lieu", example = "kkphim")
-            @RequestParam(defaultValue = "kkphim") ProviderType provider) {
+            @RequestParam(defaultValue = "kkphim") String provider) {
 
         MovieQuery query = MovieQuery.of(page, limit);
         return ResponseEntity.ok(ApiResponse.ok(movieService.search(provider, keyword, query)));
@@ -168,7 +168,7 @@ public class MovieController {
             @RequestParam(required = false) Integer year,
 
             @Parameter(description = "Nguon du lieu", example = "kkphim")
-            @RequestParam(defaultValue = "kkphim") ProviderType provider) {
+            @RequestParam(defaultValue = "kkphim") String provider) {
 
         MovieQuery query = new MovieQuery(page, limit, null, country, year, null, null);
         return ResponseEntity.ok(ApiResponse.ok(movieService.listByCategory(provider, slug, query)));
@@ -195,7 +195,7 @@ public class MovieController {
             @RequestParam(required = false) Integer year,
 
             @Parameter(description = "Nguon du lieu", example = "kkphim")
-            @RequestParam(defaultValue = "kkphim") ProviderType provider) {
+            @RequestParam(defaultValue = "kkphim") String provider) {
 
         MovieQuery query = new MovieQuery(page, limit, category, null, year, null, null);
         return ResponseEntity.ok(ApiResponse.ok(movieService.listByCountry(provider, slug, query)));
@@ -220,7 +220,7 @@ public class MovieController {
             @RequestParam(required = false) String country,
 
             @Parameter(description = "Nguon du lieu", example = "kkphim")
-            @RequestParam(defaultValue = "kkphim") ProviderType provider) {
+            @RequestParam(defaultValue = "kkphim") String provider) {
 
         MovieQuery query = new MovieQuery(page, limit, category, country, null, null, null);
         return ResponseEntity.ok(ApiResponse.ok(movieService.listByYear(provider, year, query)));
@@ -246,7 +246,7 @@ public class MovieController {
             @RequestParam List<String> slugs,
 
             @Parameter(description = "Nguon du lieu", example = "kkphim")
-            @RequestParam(defaultValue = "kkphim") ProviderType provider) {
+            @RequestParam(defaultValue = "kkphim") String provider) {
 
         return ResponseEntity.ok(ApiResponse.ok(batchService.findAll(provider, slugs)));
     }
@@ -268,7 +268,7 @@ public class MovieController {
             @PathVariable String slug,
 
             @Parameter(description = "Nguon du lieu", example = "kkphim")
-            @RequestParam(defaultValue = "kkphim") ProviderType provider) {
+            @RequestParam(defaultValue = "kkphim") String provider) {
 
         return ResponseEntity.ok(ApiResponse.ok(movieService.findBySlug(provider, slug)));
     }

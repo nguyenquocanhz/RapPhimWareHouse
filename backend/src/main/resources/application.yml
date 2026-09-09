@@ -54,6 +54,15 @@ rapphim:
     presign-expiry: 6h
     page-size: 1000
 
+  # Trang quan tri: them nguon phim luc dang chay.
+  # Khong dat khoa o day. Dat bien moi truong RAPPHIM_ADMIN_TOKEN truoc khi chay;
+  # thieu khoa thi phan sua doi tu tat, trang quan tri chi con xem duoc.
+  admin:
+    token: ${RAPPHIM_ADMIN_TOKEN:}
+    sources-file: ${RAPPHIM_SOURCES_FILE:data/custom-sources.json}
+    connect-timeout: 5s
+    read-timeout: 20s
+
 springdoc:
   api-docs:
     path: /v3/api-docs

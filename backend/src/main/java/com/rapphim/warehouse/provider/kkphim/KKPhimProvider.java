@@ -47,9 +47,31 @@ public class KKPhimProvider implements MovieProvider {
     private final RestClient client;
     private final String cdnImage;
 
+    /** Ma bao ra ngoai. Nguon do nguoi dung them dung ma rieng cua no. */
+    private final String code;
+
+    // Co hai constructor nen phai chi ro cai nao danh cho Spring, neu khong no khong
+    // biet chon cai nao va bo cuoc.
+    @org.springframework.beans.factory.annotation.Autowired
     public KKPhimProvider(@Qualifier("kkphimRestClient") RestClient client, ProviderProperties properties) {
+        this(client, properties.kkphim().cdnImage(), PROVIDER_CODE);
+    }
+
+    /**
+     * Dung lai chinh cach doc nay cho mot nguon khac.
+     *
+     * <p>Rat nhieu trang phim Viet dung chung dinh dang API cua KKPhim, chi khac ten
+     * mien. Voi nhung trang do thi khong can viet lai gi, chi can tro sang dia chi khac.</p>
+     */
+    public KKPhimProvider(RestClient client, String cdnImage, String code) {
         this.client = client;
-        this.cdnImage = properties.kkphim().cdnImage();
+        this.cdnImage = cdnImage;
+        this.code = code;
+    }
+
+    @Override
+    public String code() {
+        return code;
     }
 
     @Override
@@ -140,7 +162,7 @@ public class KKPhimProvider implements MovieProvider {
         }, KKPhimModels.V1Envelope.class);
 
         if (response == null || response.data() == null) {
-            return PageResponse.empty(query.page(), query.limit(), PROVIDER_CODE);
+            return PageResponse.empty(query.page(), query.limit(), code);
         }
 
         KKPhimModels.V1Envelope.V1Data data = response.data();
@@ -151,7 +173,7 @@ public class KKPhimProvider implements MovieProvider {
                 .toList();
 
         PageMeta meta = toMeta(data.params() == null ? null : data.params().pagination(), query);
-        return PageResponse.of(items, meta, PROVIDER_CODE);
+        return PageResponse.of(items, meta, code);
     }
 
     private List<Taxonomy> fetchTaxonomy(String path) {
@@ -176,7 +198,7 @@ public class KKPhimProvider implements MovieProvider {
                     .body(responseType);
         } catch (RestClientException ex) {
             log.warn("Goi KKPhim that bai: {}", ex.getMessage());
-            throw new UpstreamException(PROVIDER_CODE,
+            throw new UpstreamException(code,
                     "Khong lay duoc du lieu tu KKPhim: " + ex.getMessage(), ex);
         }
     }
@@ -210,7 +232,7 @@ public class KKPhimProvider implements MovieProvider {
                 toTaxonomies(item.country()),
                 toTmdb(item.tmdb()),
                 toImdb(item.imdb()),
-                PROVIDER_CODE,
+                code,
                 item.modified() == null ? null : ProviderSupport.normalizeInstant(item.modified().time()));
     }
 
@@ -240,7 +262,7 @@ public class KKPhimProvider implements MovieProvider {
                 toServers(envelope.episodes()),
                 toTmdb(movie.tmdb()),
                 toImdb(movie.imdb()),
-                PROVIDER_CODE,
+                code,
                 movie.modified() == null ? null : ProviderSupport.normalizeInstant(movie.modified().time()));
     }
 

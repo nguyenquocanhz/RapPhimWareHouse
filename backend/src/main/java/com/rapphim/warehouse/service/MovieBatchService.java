@@ -52,7 +52,7 @@ public class MovieBatchService {
      * @param slugs    danh sach slug, toi da {@value #MAX_SLUGS}
      * @return trang thai hien tai cua cac phim tim thay, bo qua phim khong con ton tai
      */
-    public List<MovieSummary> findAll(ProviderType provider, List<String> slugs) {
+    public List<MovieSummary> findAll(String provider, List<String> slugs) {
         List<String> wanted = slugs.stream()
                 .filter(Objects::nonNull)
                 .map(String::trim)
@@ -79,7 +79,7 @@ public class MovieBatchService {
     }
 
     /** Mot phim hong khong duoc lam hong ca danh sach, nen loi tra ve null. */
-    private MovieSummary lookup(ProviderType provider, String slug) {
+    private MovieSummary lookup(String provider, String slug) {
         try {
             return MovieSummary.from(movieService.findBySlug(provider, slug));
         } catch (ResourceNotFoundException ex) {

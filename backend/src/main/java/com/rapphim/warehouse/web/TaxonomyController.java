@@ -36,7 +36,7 @@ public class TaxonomyController {
                     + "GET /api/v1/movies/category/{slug} hoac bo loc 'category'.")
     public ResponseEntity<ApiResponse<List<Taxonomy>>> categories(
             @Parameter(description = "Nguon du lieu", example = "kkphim")
-            @RequestParam(defaultValue = "kkphim") ProviderType provider) {
+            @RequestParam(defaultValue = "kkphim") String provider) {
 
         return ResponseEntity.ok(ApiResponse.ok(taxonomyService.categories(provider)));
     }
@@ -48,7 +48,7 @@ public class TaxonomyController {
                     + "GET /api/v1/movies/country/{slug} hoac bo loc 'country'.")
     public ResponseEntity<ApiResponse<List<Taxonomy>>> countries(
             @Parameter(description = "Nguon du lieu", example = "kkphim")
-            @RequestParam(defaultValue = "kkphim") ProviderType provider) {
+            @RequestParam(defaultValue = "kkphim") String provider) {
 
         return ResponseEntity.ok(ApiResponse.ok(taxonomyService.countries(provider)));
     }

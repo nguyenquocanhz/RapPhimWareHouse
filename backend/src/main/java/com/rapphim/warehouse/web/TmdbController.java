@@ -76,7 +76,7 @@ public class TmdbController {
             @PathVariable String slug,
 
             @Parameter(description = "Nguon du lieu", example = "kkphim")
-            @RequestParam(defaultValue = "kkphim") ProviderType provider) {
+            @RequestParam(defaultValue = "kkphim") String provider) {
 
         MovieDetail movie = movieService.findBySlug(provider, slug);
         TmdbDetail detail = tmdbService.enrich(movie)
@@ -106,7 +106,7 @@ public class TmdbController {
             @PathVariable String slug,
 
             @Parameter(description = "Nguon du lieu", example = "kkphim")
-            @RequestParam(defaultValue = "kkphim") ProviderType provider,
+            @RequestParam(defaultValue = "kkphim") String provider,
 
             @Parameter(description = "Co bo sung metadata tu TMDB hay khong", example = "true")
             @RequestParam(defaultValue = "true") boolean enrich) {

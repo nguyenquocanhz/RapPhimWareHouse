@@ -26,12 +26,12 @@ public class TaxonomyService {
     }
 
     @Cacheable(cacheNames = CacheConfig.TAXONOMY_CACHE, key = "'categories:' + #provider")
-    public List<Taxonomy> categories(ProviderType provider) {
+    public List<Taxonomy> categories(String provider) {
         return registry.get(provider).categories();
     }
 
     @Cacheable(cacheNames = CacheConfig.TAXONOMY_CACHE, key = "'countries:' + #provider")
-    public List<Taxonomy> countries(ProviderType provider) {
+    public List<Taxonomy> countries(String provider) {
         return registry.get(provider).countries();
     }
 }
