@@ -8,6 +8,7 @@ import com.rapphim.warehouse.dto.ListType;
 import com.rapphim.warehouse.dto.ProviderType;
 import com.rapphim.warehouse.provider.ProviderRegistry;
 import com.rapphim.warehouse.service.CustomSourceService;
+import com.rapphim.warehouse.service.SettingsService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
@@ -39,17 +40,20 @@ public class SystemController {
      */
     private final ZCloudClient zcloud;
     private final TmdbClient tmdb;
+    private final SettingsService settings;
 
     public SystemController(ProviderRegistry registry,
                             CustomSourceService customSources,
                             AdminProperties admin,
                             ZCloudClient zcloud,
-                            TmdbClient tmdb) {
+                            TmdbClient tmdb,
+                            SettingsService settings) {
         this.registry = registry;
         this.customSources = customSources;
         this.admin = admin;
         this.zcloud = zcloud;
         this.tmdb = tmdb;
+        this.settings = settings;
     }
 
     /**
@@ -70,6 +74,11 @@ public class SystemController {
         body.put("customCount", customSources.all().size());
         body.put("customEnabledCount", customSources.activeProviders().size());
         body.put("tmdbConfigured", tmdb.isConfigured());
+        // Dang cua khoa TMDB, khong phai gia tri: dan nham khoa v3 vao o token v4 la loi
+        // hay gap nhat, ma nhin man hinh "da cau hinh" thi khong tai nao doan ra.
+        body.put("tmdbKeyShape", settings.status()
+                .getOrDefault(SettingsService.TMDB_ACCESS_TOKEN, Map.of())
+                .getOrDefault("shape", "none"));
         body.put("homelabConfigured", zcloud.isConfigured());
         body.put("adminConfigured", admin.isConfigured());
 

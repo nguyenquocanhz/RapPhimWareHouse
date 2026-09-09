@@ -5,7 +5,7 @@ import { MovieCard } from "@/components/movie/MovieCard";
 import { Thumb } from "@/components/movie/Thumb";
 import { ChevronLeftIcon, SearchIcon } from "@/components/ui/icons";
 import { ErrorState } from "@/components/ui/States";
-import { api, ApiRequestError, errorMessage, safe } from "@/lib/api";
+import { api, ApiRequestError, blockedHint, errorMessage, isUnreachable, safe } from "@/lib/api";
 import { formatCount } from "@/lib/format";
 import type { MovieSummary, TmdbDetail } from "@/lib/types";
 
@@ -37,6 +37,8 @@ export default async function TmdbMoviePage({ params, searchParams }: PageProps<
 
   let movie: TmdbDetail | null = null;
   let failure: string | null = null;
+  let hint: string | undefined;
+  let unreachable = false;
   let missing = false;
 
   try {
@@ -44,6 +46,8 @@ export default async function TmdbMoviePage({ params, searchParams }: PageProps<
   } catch (error) {
     missing = error instanceof ApiRequestError && error.isNotFound;
     failure = errorMessage(error);
+    unreachable = isUnreachable(error);
+    hint = blockedHint(error);
   }
 
   if (missing) {
@@ -53,7 +57,11 @@ export default async function TmdbMoviePage({ params, searchParams }: PageProps<
   if (!movie) {
     return (
       <div className="px-4 py-5 sm:px-6">
-        <ErrorState message={failure ?? "Không tải được dữ liệu từ TheMovieDB."} />
+        <ErrorState
+          message={failure ?? "Không tải được dữ liệu từ TheMovieDB."}
+          unreachable={unreachable}
+          hint={hint}
+        />
       </div>
     );
   }

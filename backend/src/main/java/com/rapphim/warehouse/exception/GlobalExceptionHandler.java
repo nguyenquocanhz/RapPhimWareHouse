@@ -104,7 +104,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiError> handleUpstream(UpstreamException ex, HttpServletRequest request) {
         log.error("Loi tu nguon '{}': {}", ex.getProvider(), ex.getMessage(), ex);
         return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
-                .body(ApiError.of(502, "UPSTREAM_ERROR", ex.getMessage(), request.getRequestURI()));
+                .body(ApiError.of(502, ex.getCode(), ex.getMessage(), request.getRequestURI()));
     }
 
     @ExceptionHandler(Exception.class)

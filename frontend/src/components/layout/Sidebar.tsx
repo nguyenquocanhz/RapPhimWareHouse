@@ -221,18 +221,15 @@ export function Sidebar({ categories, countries }: SidebarProps) {
             <DatabaseIcon width={16} height={16} />
             Nguồn dữ liệu
           </p>
+          {/*
+            Khong dat lien ket toi Swagger o day nua: dia chi backend khac nhau tuy noi
+            cai dat, ma nhung vao ma luc build thi anh Docker lai het dung chung duoc.
+            Ai can tai lieu API thi mo /swagger-ui.html tren chinh may chay backend.
+          */}
           <p>
             Dữ liệu phim lấy từ KKPhim và NguonC qua REST API của RapPhim WareHouse.
-            Xem tài liệu tại{" "}
-            <a
-              href="http://localhost:8080/swagger-ui.html"
-              target="_blank"
-              rel="noreferrer"
-              className="underline"
-            >
-              Swagger UI
-            </a>
-            .
+            Tài liệu API nằm ở <code className="text-fg">/swagger-ui.html</code> trên
+            máy chủ API.
           </p>
         </div>
       </nav>
