@@ -2,6 +2,14 @@
 #
 # Khong can khai bao khoa nao: GITHUB_TOKEN duoc GitHub cap san cho moi lan chay,
 # chi can xin quyen ghi package o duoi.
+#
+# Anh chay duoc tren ca amd64 lan arm64. Moi kien truc dung tren dung may cua no
+# chu khong gia lap: build Maven va Next.js qua QEMU cham den muc de vuot han muc
+# thoi gian. Runner ARM cua GitHub mien phi cho repo cong khai.
+#
+# Vi the moi anh phai qua hai buoc: "build" day tung ban len registry ma chua dat
+# nhan, roi "gop" noi chung lai thanh mot nhan duy nhat. Dat nhan ngay o buoc dau
+# thi hai may se ghi de len nhau, nhan cuoi cung chi con mot kien truc.
 name: Xuất bản ảnh Docker
 
 on:
@@ -14,8 +22,8 @@ env:
   REGISTRY: ghcr.io
 
 jobs:
-  publish:
-    runs-on: ubuntu-latest
+  build:
+    runs-on: ${{ matrix.platform.runner }}
 
     permissions:
       contents: read
@@ -25,11 +33,16 @@ jobs:
       # Mot anh hong thi van day not anh kia, de con biet cai nao that su hong.
       fail-fast: false
       matrix:
-        include:
+        image:
           - name: backend
             context: ./backend
           - name: web
             context: ./frontend
+        platform:
+          - name: amd64
+            runner: ubuntu-latest
+          - name: arm64
+            runner: ubuntu-24.04-arm
 
     steps:
       - uses: actions/checkout@v4
@@ -47,19 +60,85 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/rapphim-${{ matrix.name }}
+          images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/rapphim-${{ matrix.image.name }}
+
+      - name: Build và đẩy lên theo digest
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.image.context }}
+          platforms: linux/${{ matrix.platform.name }}
+          labels: ${{ steps.meta.outputs.labels }}
+          outputs: type=image,name=${{ env.REGISTRY }}/${{ github.repository_owner }}/rapphim-${{ matrix.image.name }},push-by-digest=true,name-canonical=true,push=true
+          # Dung lai lop da build o lan truoc, do phai cho Maven va npm tai lai tu dau.
+          # Moi kien truc mot kho rieng: lop cua amd64 khong dung lai duoc cho arm64.
+          cache-from: type=gha,scope=${{ matrix.image.name }}-${{ matrix.platform.name }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.image.name }}-${{ matrix.platform.name }}
+
+      # Buoc gop can biet hai ban vua day len nam o digest nao. Chi can ten tep,
+      # khong can noi dung, nen tao tep rong dat ten bang chinh digest.
+      - name: Ghi lại digest
+        run: |
+          mkdir -p /tmp/digests
+          digest="${{ steps.build.outputs.digest }}"
+          touch "/tmp/digests/${digest#sha256:}"
+
+      - name: Gửi digest sang bước gộp
+        uses: actions/upload-artifact@v4
+        with:
+          name: digest-${{ matrix.image.name }}-${{ matrix.platform.name }}
+          path: /tmp/digests/*
+          if-no-files-found: error
+          retention-days: 1
+
+  gop:
+    runs-on: ubuntu-latest
+    needs: build
+
+    permissions:
+      contents: read
+      packages: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        image: [backend, web]
+
+    steps:
+      - name: Nhận digest của các kiến trúc
+        uses: actions/download-artifact@v4
+        with:
+          path: /tmp/digests
+          pattern: digest-${{ matrix.image }}-*
+          merge-multiple: true
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Đăng nhập registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Đặt nhãn cho ảnh
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/rapphim-${{ matrix.image }}
           tags: |
             type=raw,value=latest,enable={{is_default_branch}}
             type=semver,pattern={{version}}
             type=sha,format=short
 
-      - name: Build và đẩy lên
-        uses: docker/build-push-action@v6
-        with:
-          context: ${{ matrix.context }}
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          # Dung lai lop da build o lan truoc, do phai cho Maven va npm tai lai tu dau.
-          cache-from: type=gha,scope=${{ matrix.name }}
-          cache-to: type=gha,mode=max,scope=${{ matrix.name }}
+      - name: Gộp thành một ảnh đa kiến trúc
+        working-directory: /tmp/digests
+        run: |
+          docker buildx imagetools create \
+            $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
+            $(printf '${{ env.REGISTRY }}/${{ github.repository_owner }}/rapphim-${{ matrix.image }}@sha256:%s ' *)
+
+      - name: Kiểm lại ảnh vừa gộp
+        run: |
+          docker buildx imagetools inspect \
+            ${{ env.REGISTRY }}/${{ github.repository_owner }}/rapphim-${{ matrix.image }}:latest
