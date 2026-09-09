@@ -27,3 +27,7 @@ Thumbs.db
 # Log
 *.log
 npm-debug.log*
+
+# Bo dung ebook trong docs/ebook
+__pycache__/
+*.pyc
