@@ -14,7 +14,14 @@ RUN mvn -B -q clean package -DskipTests
 
 # --------------------------------------------------------------- giai doan chay
 # Chi can JRE de chay, khong mang theo ca bo cong cu bien dich.
-FROM eclipse-temurin:17-jre-alpine
+#
+# Khong dung eclipse-temurin:17-jre-alpine duoc: ban Alpine cua Temurin chi co
+# amd64, nen dung anh cho may ARM la hong ngay o buoc keo anh nen.
+#
+# Van giu nen Alpine thay vi doi sang ban Ubuntu da kien truc cua Temurin: Alpine
+# co san busybox, tuc la con "addgroup -S" va "wget" cho HEALTHCHECK ben duoi.
+# Doi sang Ubuntu thi ca hai deu phai viet lai, va anh con nang hon.
+FROM bellsoft/liberica-openjre-alpine:17
 
 WORKDIR /app
 
