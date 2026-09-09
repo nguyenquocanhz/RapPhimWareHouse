@@ -1,0 +1,49 @@
+# Chay RapPhim bang anh da dung san - khong can ma nguon, khong phai build.
+#
+#   curl -O https://raw.githubusercontent.com/nguyenquocanhz/RapPhimWareHouse/main/docker-compose.prod.yml
+#   curl -o .env https://raw.githubusercontent.com/nguyenquocanhz/RapPhimWareHouse/main/.env.example
+#   docker compose -f docker-compose.prod.yml up -d
+#
+# Anh khong nhung dia chi nao ben trong nen chay duoc o bat ky may nao; doi cong thi
+# sua WEB_PORT / BACKEND_PORT trong .env la du.
+
+services:
+  backend:
+    image: ghcr.io/nguyenquocanhz/rapphim-backend:${TAG:-latest}
+    container_name: rapphim-backend
+    restart: unless-stopped
+    ports:
+      - "${BACKEND_PORT:-7101}:8080"
+    environment:
+      # Chi can khi co nguoi goi thang API tu trinh duyet. Ban than trang web khong
+      # can, vi moi loi goi cua no deu di qua may chu Next.
+      RAPPHIM_CORS_ORIGINS: ${PUBLIC_WEB_URL:-http://localhost:7100}
+
+      ZCLOUD_API_KEY: ${ZCLOUD_API_KEY:-}
+      ZCLOUD_PASSWORD: ${ZCLOUD_PASSWORD:-}
+      ZCLOUD_PREFIX: ${ZCLOUD_PREFIX:-}
+      RAPPHIM_ZCLOUD_BASE_URL: ${ZCLOUD_BASE_URL:-http://host.docker.internal:8080}
+
+      TMDB_ACCESS_TOKEN: ${TMDB_ACCESS_TOKEN:-}
+      TMDB_API_KEY: ${TMDB_API_KEY:-}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - rapphim
+
+  web:
+    image: ghcr.io/nguyenquocanhz/rapphim-web:${TAG:-latest}
+    container_name: rapphim-web
+    restart: unless-stopped
+    ports:
+      - "${WEB_PORT:-7100}:3000"
+    environment:
+      API_INTERNAL_URL: http://backend:8080
+    depends_on:
+      - backend
+    networks:
+      - rapphim
+
+networks:
+  rapphim:
+    driver: bridge

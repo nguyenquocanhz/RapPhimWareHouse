@@ -12,11 +12,9 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Dia chi API duoc nhung thang vao ma phia trinh duyet luc build, nen phai truyen vao
-# tu day chu khong the doi luc chay. Dia chi nay la dia chi ma *trinh duyet* goi toi.
-ARG NEXT_PUBLIC_API_BASE_URL=http://localhost:8080
-ENV NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL}
-
+# Khong nhung dia chi backend vao day. Trinh duyet khong goi thang backend - moi thu
+# di qua route handler cua chinh ung dung - nen anh nay chay duoc o bat ky may nao,
+# chi can dat API_INTERNAL_URL luc chay.
 RUN npm run build
 
 # ----------------------------------------------------------------- chay

@@ -289,21 +289,42 @@ docker compose up -d --build
 
 Xong thì mở `http://<địa-chỉ-máy>:3000`.
 
+#### Cài nhanh bằng ảnh dựng sẵn
+
+Không cần mã nguồn, không phải build:
+
+```bash
+curl -O https://raw.githubusercontent.com/nguyenquocanhz/RapPhimWareHouse/main/docker-compose.prod.yml
+curl -o .env https://raw.githubusercontent.com/nguyenquocanhz/RapPhimWareHouse/main/.env.example
+docker compose -f docker-compose.prod.yml up -d
+```
+
+Ảnh được dựng bởi GitHub Actions và đẩy lên GHCR mỗi lần `main` đổi. Không cần khai
+báo khoá nào trong workflow — `GITHUB_TOKEN` được GitHub cấp sẵn cho mỗi lần chạy.
+
+**Ảnh không nhúng địa chỉ nào bên trong**, nên chạy được ở bất kỳ máy nào. Điều này
+đòi một thay đổi thật: trước đây địa chỉ API bị nướng vào mã lúc build, nên ảnh dựng
+ở máy này cài sang máy khác là gọi nhầm vào mạng của máy cũ (đã kiểm: chuỗi
+`http://192.168.100.169:8081` nằm ngay trong `.next/static`). Giờ **trình duyệt không
+gọi thẳng backend nữa** — kể cả đường tải NFO cũng đi qua route handler của chính ứng
+dụng Next, và chỉ máy chủ Next mới biết backend nằm ở đâu qua `API_INTERNAL_URL` đọc
+lúc chạy.
+
+Nếu kho mã để riêng tư thì gói ảnh trên GHCR cũng riêng tư theo; muốn người khác tải
+được thì đổi gói đó sang công khai trong phần Packages của kho.
+
 #### Ba chỗ dễ sai khi chuyển sang Docker
 
 **Cổng 8080 trên homelab đã có ZCloud dùng.** Backend bên trong vẫn nghe 8080 nhưng
 được đưa ra ngoài ở **8081**, đổi bằng `BACKEND_PORT`.
 
-**Hai chiều gọi API là hai địa chỉ khác nhau.** Trình duyệt của người xem gọi
-`http://<máy>:8081`, còn mã chạy trên server nằm trong mạng riêng của Docker nên gọi
-thẳng `http://backend:8080`. Đây không phải chuyện lý thuyết: lần deploy đầu tôi dùng
-một địa chỉ cho cả hai, và từ trong container gọi ra địa chỉ LAN của chính máy chủ thì
-**treo cho tới khi timeout** — trang tải ra chỉ có phần vỏ, không một thẻ phim nào.
+**Trình duyệt không gọi thẳng backend.** Mọi lời gọi đều qua máy chủ Next, và chỉ nó
+biết backend nằm ở đâu (`API_INTERNAL_URL`, đọc lúc chạy).
 
-Nên `lib/api.ts` tách làm hai: `NEXT_PUBLIC_API_BASE_URL` cho trình duyệt (bị nhúng
-thẳng vào mã lúc build nên phải là `build args`, không đổi được lúc chạy), và
-`API_INTERNAL_URL` cho phía server. Riêng đường tải NFO luôn dùng địa chỉ công khai dù
-render ở phía nào — đó là liên kết trình duyệt mở, không phải lời gọi từ server.
+Đây là bài học từ một lần hỏng thật: ban đầu địa chỉ API được nhúng vào mã lúc build và
+dùng chung cho cả hai chiều. Từ trong container gọi ra địa chỉ LAN của chính máy chủ thì
+**treo tới timeout** — trang trả về 39KB chỉ có phần vỏ, không một thẻ phim nào. Sau khi
+tách, trang chủ ra 319KB với 24 thẻ phim.
 
 **CORS phải mở cho địa chỉ mới.** Trước đây danh sách cắm cứng `localhost:3000`; giờ đọc
 từ `RAPPHIM_CORS_ORIGINS`, compose truyền vào bằng `PUBLIC_WEB_URL`. Thiếu bước này thì

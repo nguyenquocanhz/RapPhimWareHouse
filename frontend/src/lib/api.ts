@@ -12,24 +12,18 @@ import type {
 } from "@/lib/types";
 
 /**
- * Dia chi API ma *trinh duyet* goi toi.
+ * Dia chi API cho ma chay tren server.
  *
- * <p>Bi nhung thang vao ma luc build nen phai la dia chi may nguoi xem voi toi duoc.</p>
- */
-const PUBLIC_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8080";
-
-/**
- * Dia chi API dung cho ma chay tren server.
+ * <p>Chi phia server dung dia chi nay. Trinh duyet khong bao gio goi thang backend:
+ * moi thu no can deu di qua route handler cua chinh ung dung Next. Nho vay dia chi
+ * backend khong bi nhung vao ma luc build, va mot anh Docker dung duoc o may nay thi
+ * cung dung duoc o may khac.</p>
  *
- * <p>Khi ca hai tang cung chay bang Docker, tien trinh Next nam trong mang rieng cua
- * Docker: no goi thang {@code http://backend:8080} duoc, con dia chi LAN cua may chu
- * thi khong chac ra toi (da gap that: goi ra dia chi LAN bi treo, goi ten dich vu thi
- * chay). Nen hai chieu phai la hai dia chi khac nhau.</p>
+ * <p>{@code API_INTERNAL_URL} danh cho luc chay bang Docker - luc do backend nam
+ * trong mang rieng cua Docker, goi thang ten dich vu nhanh hon va chac hon.</p>
  */
 const BASE_URL =
-  typeof window === "undefined"
-    ? (process.env.API_INTERNAL_URL ?? PUBLIC_BASE_URL)
-    : PUBLIC_BASE_URL;
+  process.env.API_INTERNAL_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8080";
 
 /** Loi tra ve tu backend, giu lai ma loi de trang goi co the phan biet 404 voi loi khac. */
 export class ApiRequestError extends Error {
@@ -237,10 +231,10 @@ export interface TmdbDiscoverParams {
  * Backend dat san Content-Disposition nen the <a> thuong la du, khong can JavaScript.
  */
 export function nfoUrl(slug: string, provider?: string): string {
-  const query = provider && provider !== "kkphim" ? `?provider=${provider}` : "";
-  // Day la lien ket trinh duyet mo, khong phai loi goi tu server - luon dung dia
-  // chi cong khai du dang render o phia nao.
-  return `${PUBLIC_BASE_URL}/api/v1/movies/${slug}/nfo${query}`;
+  const query = provider && provider !== "kkphim" ? `&provider=${encodeURIComponent(provider)}` : "";
+  // Duong tuong doi, di qua route handler cua chinh ung dung: trinh duyet khong can
+  // biet backend nam o dau.
+  return `/api/nfo?slug=${encodeURIComponent(slug)}${query}`;
 }
 
 /**

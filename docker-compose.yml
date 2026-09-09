@@ -1,7 +1,7 @@
 # RapPhim WareHouse - chay ca hai tang bang Docker.
 #
-# Cong 8080 tren homelab da co ZCloud dung roi, nen backend duoc dua ra ngoai o 8081.
-# Ben trong mang cua Docker no van nghe o 8080 nhu binh thuong.
+# Cong 8080 tren homelab da co ZCloud dung roi, nen backend duoc dua ra ngoai o 7101,
+# web o 7100. Ben trong mang cua Docker chung van nghe 8080 va 3000 nhu binh thuong.
 #
 #   docker compose up -d --build
 #
@@ -15,11 +15,11 @@ services:
     container_name: rapphim-backend
     restart: unless-stopped
     ports:
-      - "${BACKEND_PORT:-8081}:8080"
+      - "${BACKEND_PORT:-7101}:8080"
     environment:
       # Dia chi cua frontend nhin tu trinh duyet - thieu cai nay thi trinh duyet chan
       # moi loi goi API vi khac goc.
-      RAPPHIM_CORS_ORIGINS: ${PUBLIC_WEB_URL:-http://localhost:3000}
+      RAPPHIM_CORS_ORIGINS: ${PUBLIC_WEB_URL:-http://localhost:7100}
 
       # Kho phim rieng. De trong thi nguon homelab tu tat, phan con lai van chay.
       ZCLOUD_API_KEY: ${ZCLOUD_API_KEY:-}
@@ -41,19 +41,14 @@ services:
   web:
     build:
       context: ./frontend
-      args:
-        # Dia chi nay bi nhung thang vao ma phia trinh duyet luc build, nen phai la
-        # dia chi ma may cua nguoi xem goi toi duoc - khong dung ten dich vu Docker.
-        NEXT_PUBLIC_API_BASE_URL: ${PUBLIC_API_URL:-http://localhost:8081}
     image: rapphim-web:latest
     container_name: rapphim-web
     restart: unless-stopped
     ports:
-      - "${WEB_PORT:-3000}:3000"
+      - "${WEB_PORT:-7100}:3000"
     environment:
-      NEXT_PUBLIC_API_BASE_URL: ${PUBLIC_API_URL:-http://localhost:8081}
-      # Ma chay tren server goi thang trong mang Docker. Da do that: tu trong container
-      # goi ra dia chi LAN cua may chu thi treo, goi ten dich vu thi chay.
+      # Dia chi duy nhat ma frontend can. Trinh duyet khong dung toi no: moi loi goi
+      # deu di qua route handler cua chinh ung dung Next.
       API_INTERNAL_URL: http://backend:8080
     depends_on:
       - backend

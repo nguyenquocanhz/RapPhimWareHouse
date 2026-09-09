@@ -17,11 +17,14 @@ REMOTE_DIR="${REMOTE_DIR:-rapphim}"
 
 # Dia chi de kiem tra sau khi dung lai. Doc tu .env neu co de khoi khai bao hai lan.
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-WEB_URL="http://$(echo "$SSH_HOST" | cut -d@ -f2):3000"
-API_URL="http://$(echo "$SSH_HOST" | cut -d@ -f2):8081"
+WEB_URL="http://$(echo "$SSH_HOST" | cut -d@ -f2):7100"
+API_URL="http://$(echo "$SSH_HOST" | cut -d@ -f2):7101"
 if [[ -f "$HERE/.env" ]]; then
-  WEB_URL="$(grep -E '^PUBLIC_WEB_URL=' "$HERE/.env" | cut -d= -f2- || echo "$WEB_URL")"
-  API_URL="$(grep -E '^PUBLIC_API_URL=' "$HERE/.env" | cut -d= -f2- || echo "$API_URL")"
+  host="$(echo "$SSH_HOST" | cut -d@ -f2)"
+  web_port="$(grep -E '^WEB_PORT=' "$HERE/.env" | cut -d= -f2- || echo 7100)"
+  api_port="$(grep -E '^BACKEND_PORT=' "$HERE/.env" | cut -d= -f2- || echo 7101)"
+  WEB_URL="http://$host:${web_port:-7100}"
+  API_URL="http://$host:${api_port:-7101}"
 fi
 
 BUILD=1
