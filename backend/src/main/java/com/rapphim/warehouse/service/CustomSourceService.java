@@ -89,18 +89,30 @@ public class CustomSourceService {
             throw new IllegalArgumentException("Chỉ giữ được tối đa " + MAX_SOURCES + " nguồn.");
         }
 
-        sources.put(source.id(), source);
+        // Ghi xuong dia truoc, doi trang thai trong bo nho sau. Lam nguoc lai thi mot
+        // lan ghi that bai se de lai bo nho va tep khac nhau: giao dien bao da them
+        // nhung khoi dong lai la mat.
+        Map<String, CustomSource> next = new LinkedHashMap<>(sources);
+        next.put(source.id(), source);
+        persist(next.values());
+
+        sources.clear();
+        sources.putAll(next);
         rebuild(source);
-        persist();
         return source;
     }
 
     public synchronized boolean remove(String id) {
-        if (sources.remove(id) == null) {
+        if (!sources.containsKey(id)) {
             return false;
         }
+
+        Map<String, CustomSource> next = new LinkedHashMap<>(sources);
+        next.remove(id);
+        persist(next.values());
+
+        sources.remove(id);
         providers.remove(id);
-        persist();
         return true;
     }
 
@@ -170,7 +182,7 @@ public class CustomSourceService {
         }
     }
 
-    private void persist() {
+    private void persist(java.util.Collection<CustomSource> snapshot) {
         Path path = file();
         try {
             Path parent = path.getParent();
@@ -178,7 +190,7 @@ public class CustomSourceService {
                 Files.createDirectories(parent);
             }
             Files.writeString(path, mapper.writerWithDefaultPrettyPrinter()
-                    .writeValueAsString(new ArrayList<>(sources.values())));
+                    .writeValueAsString(new ArrayList<>(snapshot)));
         } catch (IOException | RuntimeException ex) {
             log.error("Không ghi được {}: {}", path, ex.getMessage());
             throw new IllegalStateException("Không lưu được danh sách nguồn: " + ex.getMessage(), ex);

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 
+import { Dashboard, EmptyHint } from "@/components/admin/Dashboard";
 import { CheckIcon, DatabaseIcon, TrashIcon } from "@/components/ui/icons";
 
 /**
@@ -115,11 +116,14 @@ export function SourceManager() {
 
   return (
     <div className="px-4 py-5 sm:px-6">
-      <h1 className="text-xl font-semibold text-fg sm:text-2xl">Nguồn phim</h1>
+      <h1 className="text-xl font-semibold text-fg sm:text-2xl">Quản trị</h1>
       <p className="mt-1 max-w-2xl text-sm text-muted">
         Thêm nguồn dùng chung định dạng API của KKPhim - phần lớn trang phim Việt đều
         vậy. Khai báo địa chỉ là chạy được ngay, không phải sửa mã nguồn.
       </p>
+
+      {/* Bang tong quan doc lai moi lan danh sach nguon doi */}
+      <Dashboard round={round} />
 
       {!writable && (
         <p className="mt-4 max-w-2xl rounded-xl border border-border bg-surface px-4 py-3 text-sm text-muted">
@@ -158,9 +162,7 @@ export function SourceManager() {
       <h2 className="mt-8 text-sm font-medium text-fg">Đang có {sources.length} nguồn tự thêm</h2>
 
       {sources.length === 0 ? (
-        <p className="mt-2 rounded-xl bg-surface px-4 py-5 text-sm text-muted">
-          Chưa có nguồn nào. Điền vào ô bên dưới để thêm.
-        </p>
+        <EmptyHint />
       ) : (
         <ul className="mt-2 max-w-3xl divide-y divide-border overflow-hidden rounded-xl border border-border">
           {sources.map((source) => (

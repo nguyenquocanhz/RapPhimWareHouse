@@ -20,6 +20,12 @@ WORKDIR /app
 
 # Chay bang tai khoan thuong, khong phai root.
 RUN addgroup -S rapphim && adduser -S rapphim -G rapphim
+
+# Tao san thu muc du lieu va giao cho user thuong. Phai lam truoc khi doi user:
+# volume moi cua Docker thua quyen so huu tu thu muc nay trong anh, neu de root thi
+# tien trinh chay bang user thuong khong ghi duoc - va loi chi lo ra luc chay.
+RUN mkdir -p /app/data && chown -R rapphim:rapphim /app/data
+
 USER rapphim
 
 COPY --from=build --chown=rapphim:rapphim /build/target/*.jar app.jar

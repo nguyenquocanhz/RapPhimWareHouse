@@ -1,8 +1,13 @@
 package com.rapphim.warehouse.web;
 
 import com.rapphim.warehouse.common.ApiResponse;
+import com.rapphim.warehouse.config.AdminProperties;
+import com.rapphim.warehouse.config.TmdbProperties;
+import com.rapphim.warehouse.config.ZCloudProperties;
 import com.rapphim.warehouse.dto.ListType;
+import com.rapphim.warehouse.dto.ProviderType;
 import com.rapphim.warehouse.provider.ProviderRegistry;
+import com.rapphim.warehouse.service.CustomSourceService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
@@ -24,9 +29,45 @@ import java.util.Map;
 public class SystemController {
 
     private final ProviderRegistry registry;
+    private final CustomSourceService customSources;
+    private final TmdbProperties tmdb;
+    private final ZCloudProperties zcloud;
+    private final AdminProperties admin;
 
-    public SystemController(ProviderRegistry registry) {
+    public SystemController(ProviderRegistry registry,
+                            CustomSourceService customSources,
+                            TmdbProperties tmdb,
+                            ZCloudProperties zcloud,
+                            AdminProperties admin) {
         this.registry = registry;
+        this.customSources = customSources;
+        this.tmdb = tmdb;
+        this.zcloud = zcloud;
+        this.admin = admin;
+    }
+
+    /**
+     * Tinh trang cau hinh, danh cho trang quan tri.
+     *
+     * <p>Chi tra ve <b>da cau hinh hay chua</b> chu khong tra ve khoa nao. Trang quan
+     * tri chi can biet cai gi con thieu de nhac nguoi dung, khong can biet gia tri.</p>
+     */
+    @GetMapping("/status")
+    @Operation(
+            summary = "Tinh trang cau hinh cua he thong",
+            description = "Cho biet phan nao da cau hinh, khong tra ve bat ky khoa nao.")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> status() {
+        Map<String, Object> body = new LinkedHashMap<>();
+
+        body.put("providers", registry.availableCodes());
+        body.put("builtInCount", ProviderType.values().length);
+        body.put("customCount", customSources.all().size());
+        body.put("customEnabledCount", customSources.activeProviders().size());
+        body.put("tmdbConfigured", tmdb.isConfigured());
+        body.put("homelabConfigured", zcloud.isConfigured());
+        body.put("adminConfigured", admin.isConfigured());
+
+        return ResponseEntity.ok(ApiResponse.ok(body));
     }
 
     @GetMapping("/providers")

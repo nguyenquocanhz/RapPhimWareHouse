@@ -382,6 +382,13 @@ dữ liệu thì dùng lại nguyên của [`KKPhimProvider`](backend/src/main/j
 Nút **Gọi thử** đọc thử 5 phim trước khi lưu, để biết địa chỉ đã đúng chưa thay vì lưu
 vào rồi mới phát hiện hỏng.
 
+Trang có bảng tổng quan ở đầu: số nguồn đang hoạt động, mã nguồn dùng được, và **đã
+cấu hình hay chưa** cho kho riêng và TMDB. Bảng này chỉ nói *có/không*, không bao giờ
+trả về giá trị khoá nào - nó chỉ cần nhắc bạn còn thiếu gì để đi đặt.
+
+Lối vào nằm ở nhóm **Quản trị** cuối sidebar, tách khỏi các mục xem phim vì đây là chỗ
+sửa cấu hình của cả hệ thống chứ không phải một mục để duyệt phim.
+
 #### Ba quyết định đáng nói
 
 **Lưu ra tệp JSON, không thêm cơ sở dữ liệu.** Cả hệ thống không có cơ sở dữ liệu nào -
@@ -400,6 +407,18 @@ sách các nguồn đang có.
 `RAPPHIM_ADMIN_TOKEN` thì phần sửa đổi **tự tắt** và trang chỉ còn xem được - an toàn
 hơn là để mở cho ai cũng trỏ hệ thống sang địa chỉ bất kỳ.
 
+#### Hai lỗi gặp khi chạy thật
+
+**Container không ghi được vào volume.** Ảnh chạy bằng tài khoản thường (uid 100) trong
+khi volume mới của Docker thuộc root, nên thêm nguồn là `500` kèm
+`AccessDeniedException`. Sửa bằng cách tạo sẵn `/app/data` và giao cho user thường
+**trước khi** đổi user trong `Dockerfile` - volume mới thừa quyền sở hữu từ thư mục đó
+trong ảnh. Volume cũ đã lỡ tạo thì phải xoá đi cho Docker dựng lại.
+
+**Ghi hỏng để lại bộ nhớ và tệp khác nhau.** Ban đầu code đổi trạng thái trong bộ nhớ
+rồi mới ghi xuống đĩa, nên lần ghi thất bại ở trên khiến giao diện báo đã thêm nhưng
+khởi động lại là mất. Giờ ghi xuống đĩa trước, thành công mới đổi bộ nhớ.
+
 #### Đã kiểm
 
 | Kiểm | Kết quả |
@@ -412,6 +431,7 @@ hơn là để mở cho ai cũng trỏ hệ thống sang địa chỉ bất kỳ
 | Gọi API bằng mã nguồn mới | trả phim thật, `provider` đúng mã đó |
 | Khởi động lại | nguồn đã lưu được nạp lại từ tệp |
 | Mã không tồn tại | `400` kèm danh sách nguồn đang có |
+| Dựng lại container | nguồn vẫn còn, vẫn phát được phim |
 
 ### Kho phim riêng trên homelab
 

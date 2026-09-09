@@ -48,6 +48,14 @@ const LIBRARY: NavItem[] = [
   { href: "/lich-su-tim-kiem", label: "Lịch sử tìm kiếm", icon: <SearchIcon /> },
 ];
 
+/**
+ * Muc quan tri.
+ *
+ * <p>Tach thanh nhom rieng dat cuoi cung chu khong tron vao cac muc xem phim: day la
+ * cho sua cau hinh cua ca he thong, khong phai mot muc de duyet phim.</p>
+ */
+const ADMIN: NavItem[] = [{ href: "/cms", label: "Quản trị nguồn", icon: <DatabaseIcon /> }];
+
 const SECONDARY: NavItem[] = [
   { href: "/danh-sach/phim-vietsub", label: "Vietsub", icon: <TrendingIcon /> },
   { href: "/danh-sach/phim-thuyet-minh", label: "Thuyết minh", icon: <TrendingIcon /> },
@@ -144,6 +152,19 @@ export function Sidebar({ categories, countries }: SidebarProps) {
 
         <Section title="Bản phát">
           {SECONDARY.map((item) => (
+            <FullLink
+              key={item.href}
+              item={item}
+              active={isActive(pathname, item.href)}
+              onNavigate={closeSidebar}
+            />
+          ))}
+        </Section>
+
+        <Divider />
+
+        <Section title="Quản trị">
+          {ADMIN.map((item) => (
             <FullLink
               key={item.href}
               item={item}
