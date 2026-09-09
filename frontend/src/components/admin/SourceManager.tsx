@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 
+import { AuditLog } from "@/components/admin/AuditLog";
 import { Dashboard, EmptyHint } from "@/components/admin/Dashboard";
 import { CheckIcon, DatabaseIcon, TrashIcon } from "@/components/ui/icons";
 
@@ -322,6 +323,10 @@ export function SourceManager() {
           </button>
         </div>
       </form>
+
+      {/* Nhat ky: ai sua gi luc nao */}
+      <h2 className="mt-8 text-sm font-medium text-fg">Nhật ký thay đổi</h2>
+      <AuditLog round={round} token={token} />
     </div>
   );
 }

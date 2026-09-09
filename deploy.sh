@@ -76,7 +76,7 @@ tar czf - -C "$HERE" \
   --exclude=.git \
   --exclude='*.log' \
   --exclude=.env \
-  backend frontend docs README.md docker-compose.yml .env.example \
+  backend frontend docs README.md docker-compose.yml docker-compose.prod.yml Corefile .env.example \
   | ssh_run "mkdir -p ~/$REMOTE_DIR && tar xzf - -C ~/$REMOTE_DIR"
 
 # Lan dau chay thi chua co .env, tao san mot ban tu mau de compose khong hong.

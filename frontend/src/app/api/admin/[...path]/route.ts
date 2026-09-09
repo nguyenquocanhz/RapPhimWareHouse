@@ -13,9 +13,23 @@ import { NextResponse, type NextRequest } from "next/server";
 const BASE =
   process.env.API_INTERNAL_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8080";
 
+/**
+ * Dia chi that cua nguoi goi.
+ *
+ * <p>Backend nam sau may chu Next nen no chi thay dia chi cua container web. Khong
+ * chuyen tiep dia chi nay thi nhat ky quan tri ghi cung mot dong cho moi nguoi.</p>
+ */
+function clientAddress(request: NextRequest): string | null {
+  const forwarded = request.headers.get("x-forwarded-for");
+  if (forwarded) return forwarded.split(",")[0].trim();
+  return request.headers.get("x-real-ip");
+}
+
 async function forward(request: NextRequest, path: string[], method: string) {
   const target = `${BASE}/api/v1/admin/${path.map(encodeURIComponent).join("/")}`;
   const token = request.headers.get("x-admin-token");
+  const address = clientAddress(request);
+  const agent = request.headers.get("user-agent");
 
   try {
     const response = await fetch(target, {
@@ -24,6 +38,8 @@ async function forward(request: NextRequest, path: string[], method: string) {
       headers: {
         "content-type": "application/json",
         ...(token ? { "x-admin-token": token } : {}),
+        ...(address ? { "x-forwarded-for": address } : {}),
+        ...(agent ? { "user-agent": agent } : {}),
       },
       body: method === "GET" || method === "DELETE" ? undefined : await request.text(),
     });

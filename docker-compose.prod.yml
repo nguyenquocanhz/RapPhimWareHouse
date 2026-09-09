@@ -8,6 +8,18 @@
 # sua WEB_PORT / BACKEND_PORT trong .env la du.
 
 services:
+  # Bo phan giai ten mien rieng, xem Corefile de biet vi sao can.
+  dns:
+    image: coredns/coredns:1.14.7
+    container_name: rapphim-dns
+    restart: unless-stopped
+    command: ["-conf", "/Corefile"]
+    volumes:
+      - ./Corefile:/Corefile:ro
+    networks:
+      rapphim:
+        ipv4_address: 172.29.0.53
+
   backend:
     image: ghcr.io/nguyenquocanhz/rapphim-backend:${TAG:-latest}
     container_name: rapphim-backend
@@ -34,6 +46,12 @@ services:
       # Nguon tu them phai song qua lan dung lai container, neu khong thi dung lai
       # anh moi la mat sach.
       - rapphim-data:/app/data
+    # Dung bo phan giai rieng o tren. Phai ghi bang dia chi IP: Docker khong nhan ten
+    # dich vu o muc nay.
+    dns:
+      - 172.29.0.53
+    depends_on:
+      - dns
     extra_hosts:
       - "host.docker.internal:host-gateway"
     networks:
@@ -58,3 +76,8 @@ volumes:
 networks:
   rapphim:
     driver: bridge
+    # Dat dai co dinh de gan duoc dia chi tinh cho bo phan giai. Cac dai 172.17 den
+    # 172.23 tren may nay da co du an khac dung.
+    ipam:
+      config:
+        - subnet: 172.29.0.0/16

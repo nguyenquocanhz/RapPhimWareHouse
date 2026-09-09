@@ -330,6 +330,38 @@ lúc chạy.
 Nếu kho mã để riêng tư thì gói ảnh trên GHCR cũng riêng tư theo; muốn người khác tải
 được thì đổi gói đó sang công khai trong phần Packages của kho.
 
+
+#### Bộ phân giải tên miền riêng
+
+Stack có thêm một container CoreDNS. Lý do rất cụ thể: **mạng ở một số nơi chèn phản
+hồi DNS giả** cho vài tên miền. Đo thật trên máy chủ này - hỏi `api.themoviedb.org`
+năm lần bằng DNS thường thì ba lần trả về `127.0.0.1`:
+
+```
+127.0.0.1  127.0.0.1  3.163.175.90  3.167.212.66  127.0.0.1
+```
+
+Lỗi hiện ra là `I/O error`, trông như backend hỏng, thực ra là không bao giờ kết nối
+tới nơi. DNS-over-TLS đi trong đường mã hoá nên không chèn vào được; qua CoreDNS thì
+sáu lần hỏi ra sáu lần cùng một địa chỉ thật.
+
+**Nhưng riêng TMDB thì vẫn không gọi được**, và đây không phải chuyện ứng dụng sửa
+được. Cùng mạng đó còn chặn theo tên miền trong bắt tay TLS:
+
+| Kiểm | Kết quả |
+|---|---|
+| TCP tới IP của TMDB cổng 443 | mở được |
+| TLS với tên `api.themoviedb.org` | bị reset |
+| TLS với tên `www.themoviedb.org`, cùng IP | bị reset |
+| Một trang khác cùng CloudFront (`d3js.org`) | 200 |
+
+TCP mở được nhưng vừa gửi tên miền là bị cắt - tức là chặn theo tên chứ không theo IP.
+Muốn dùng TMDB ở mạng như vậy thì phải cho lưu lượng đi vòng ra ngoài (VPN, tunnel,
+hoặc một máy chủ trung gian), không có cách nào sửa từ trong mã nguồn.
+
+Phần còn lại **không phụ thuộc TMDB**: xuất NFO vẫn chạy bằng mã tmdb/imdb mà KKPhim
+nhúng sẵn trong dữ liệu phim, nên file NFO vẫn đủ `title`, `year`, `plot` và `uniqueid`.
+
 #### Ba chỗ dễ sai khi chuyển sang Docker
 
 **Cổng 8080 trên homelab đã có ZCloud dùng.** Backend bên trong vẫn nghe 8080 nhưng

@@ -1,0 +1,18 @@
+# DNS rieng cho cac container cua RapPhim.
+#
+# Mang o mot so noi chen phan hoi DNS gia cho vai ten mien - do that tren may nay:
+# hoi api.themoviedb.org 5 lan bang DNS thuong thi 3 lan tra ve 127.0.0.1. Loi hien ra
+# la "I/O error", trong nhu backend hong, thuc ra la khong bao gio ket noi toi noi.
+#
+# DNS-over-TLS di trong duong ma hoa nen khong chen vao duoc. Doi lai phai tu chay mot
+# bo phan giai, va do la ly do co container nay.
+.:53 {
+    forward . tls://8.8.8.8 tls://8.8.4.4 {
+        tls_servername dns.google
+    }
+
+    # Dem lai cho do phai mo ket noi TLS moi lan hoi.
+    cache 300
+
+    errors
+}

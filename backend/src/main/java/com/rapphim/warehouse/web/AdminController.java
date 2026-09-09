@@ -6,11 +6,13 @@ import com.rapphim.warehouse.dto.CustomSource;
 import com.rapphim.warehouse.exception.AdminNotConfiguredException;
 import com.rapphim.warehouse.exception.ResourceNotFoundException;
 import com.rapphim.warehouse.exception.UnauthorizedException;
+import com.rapphim.warehouse.service.AuditService;
 import com.rapphim.warehouse.service.CustomSourceService;
 import com.rapphim.warehouse.service.SettingsService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -40,13 +42,26 @@ public class AdminController {
     private final CustomSourceService sources;
     private final AdminProperties properties;
     private final SettingsService settings;
+    private final AuditService audit;
 
     public AdminController(CustomSourceService sources,
                            AdminProperties properties,
-                           SettingsService settings) {
+                           SettingsService settings,
+                           AuditService audit) {
         this.sources = sources;
         this.properties = properties;
         this.settings = settings;
+        this.audit = audit;
+    }
+
+    @GetMapping("/audit")
+    @Operation(summary = "Nhat ky cac thay doi gan day")
+    public ResponseEntity<ApiResponse<List<AuditService.Entry>>> audit(
+            @RequestHeader(value = "X-Admin-Token", required = false) String token) {
+
+        // Nhat ky co dia chi mang cua nguoi dung nen doi khoa moi doc duoc.
+        authorise(token);
+        return ResponseEntity.ok(ApiResponse.ok(audit.recent(50)));
     }
 
     /**
@@ -67,7 +82,8 @@ public class AdminController {
     @Operation(summary = "Dat hoac xoa mot khoa")
     public ResponseEntity<ApiResponse<Map<String, Object>>> saveSetting(
             @RequestHeader(value = "X-Admin-Token", required = false) String token,
-            @RequestBody Map<String, String> body) {
+            @RequestBody Map<String, String> body,
+            HttpServletRequest request) {
 
         authorise(token);
 
@@ -75,7 +91,16 @@ public class AdminController {
         if (name == null || name.isBlank()) {
             throw new IllegalArgumentException("Thiếu tên khoá cần đặt.");
         }
-        settings.put(name, body.get("value"));
+        String value = body.get("value");
+        try {
+            settings.put(name, value);
+            // Chi ghi ten khoa va da dat hay da xoa - khong bao gio ghi gia tri.
+            audit.record(request, value == null || value.isBlank() ? "setting.clear" : "setting.set",
+                    name, true, null);
+        } catch (RuntimeException ex) {
+            audit.record(request, "setting.set", name, false, ex.getMessage());
+            throw ex;
+        }
 
         return ResponseEntity.ok(ApiResponse.ok(Map.of(
                 "items", settings.status(),
@@ -96,10 +121,19 @@ public class AdminController {
     public ResponseEntity<ApiResponse<CustomSource>> save(
             @Parameter(description = "Khoa quan tri", required = true)
             @RequestHeader(value = "X-Admin-Token", required = false) String token,
-            @Valid @RequestBody CustomSource source) {
+            @Valid @RequestBody CustomSource source,
+            HttpServletRequest request) {
 
         authorise(token);
-        return ResponseEntity.ok(ApiResponse.ok(sources.save(source)));
+        try {
+            CustomSource saved = sources.save(source);
+            audit.record(request, "source.save", source.id(), true,
+                    source.enabled() ? "đang bật" : "đang tắt");
+            return ResponseEntity.ok(ApiResponse.ok(saved));
+        } catch (RuntimeException ex) {
+            audit.record(request, "source.save", source.id(), false, ex.getMessage());
+            throw ex;
+        }
     }
 
     @PostMapping("/sources/probe")
@@ -122,12 +156,15 @@ public class AdminController {
     @Operation(summary = "Xoa mot nguon")
     public ResponseEntity<ApiResponse<List<CustomSource>>> remove(
             @RequestHeader(value = "X-Admin-Token", required = false) String token,
-            @PathVariable String id) {
+            @PathVariable String id,
+            HttpServletRequest request) {
 
         authorise(token);
         if (!sources.remove(id)) {
+            audit.record(request, "source.delete", id, false, "không có nguồn này");
             throw new ResourceNotFoundException("SOURCE_NOT_FOUND", "Không có nguồn '" + id + "'");
         }
+        audit.record(request, "source.delete", id, true, null);
         return ResponseEntity.ok(ApiResponse.ok(sources.all()));
     }
 
