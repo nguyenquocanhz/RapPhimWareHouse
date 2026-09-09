@@ -1,6 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Gom san mot ban chay doc lap kem node_modules toi thieu - anh Docker nho hon han
+  // so voi viec chep ca cay thu vien.
+  output: "standalone",
+
   images: {
     // Anh phim duoc phuc vu tu CDN cua hai nguon. Chi cho phep dung cac host nay
     // de tranh bien route toi uu anh thanh proxy mo.

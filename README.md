@@ -278,6 +278,60 @@ Một chi tiết đã phải xử lý: KKPhim báo `modifiedAt` sớm hơn đồ
 mốc "đã đọc" phải lấy giá trị lớn hơn giữa thời điểm hiện tại và thông báo mới nhất -
 nếu không, bấm "đánh dấu đã đọc" sẽ không bao giờ xoá hết.
 
+### Chạy bằng Docker
+
+Hai tầng đều có `Dockerfile` riêng, ghép lại bằng `docker-compose.yml` ở gốc kho.
+
+```bash
+cp .env.example .env      # sửa cho hợp máy của bạn
+docker compose up -d --build
+```
+
+Xong thì mở `http://<địa-chỉ-máy>:3000`.
+
+#### Ba chỗ dễ sai khi chuyển sang Docker
+
+**Cổng 8080 trên homelab đã có ZCloud dùng.** Backend bên trong vẫn nghe 8080 nhưng
+được đưa ra ngoài ở **8081**, đổi bằng `BACKEND_PORT`.
+
+**Hai chiều gọi API là hai địa chỉ khác nhau.** Trình duyệt của người xem gọi
+`http://<máy>:8081`, còn mã chạy trên server nằm trong mạng riêng của Docker nên gọi
+thẳng `http://backend:8080`. Đây không phải chuyện lý thuyết: lần deploy đầu tôi dùng
+một địa chỉ cho cả hai, và từ trong container gọi ra địa chỉ LAN của chính máy chủ thì
+**treo cho tới khi timeout** — trang tải ra chỉ có phần vỏ, không một thẻ phim nào.
+
+Nên `lib/api.ts` tách làm hai: `NEXT_PUBLIC_API_BASE_URL` cho trình duyệt (bị nhúng
+thẳng vào mã lúc build nên phải là `build args`, không đổi được lúc chạy), và
+`API_INTERNAL_URL` cho phía server. Riêng đường tải NFO luôn dùng địa chỉ công khai dù
+render ở phía nào — đó là liên kết trình duyệt mở, không phải lời gọi từ server.
+
+**CORS phải mở cho địa chỉ mới.** Trước đây danh sách cắm cứng `localhost:3000`; giờ đọc
+từ `RAPPHIM_CORS_ORIGINS`, compose truyền vào bằng `PUBLIC_WEB_URL`. Thiếu bước này thì
+trang tải được nhưng mọi lời gọi API bị trình duyệt chặn.
+
+Ngoài ra, ZCloud chạy trên **chính máy chủ** chứ không phải trong Docker, nên từ trong
+container phải gọi qua `host.docker.internal` (đã khai báo `extra_hosts: host-gateway`
+để dùng được trên Linux), không phải `localhost` — trong container `localhost` là chính
+container đó.
+
+#### Đã chạy thật trên homelab
+
+Bản đang chạy ở `192.168.100.169`, dựng trên chính máy đó (Ubuntu 24.04, x86_64,
+Docker 29.7.2):
+
+| Kiểm | Kết quả |
+|---|---|
+| Hai container | `rapphim-backend` và `rapphim-web` đều `healthy` |
+| Trang chủ | 319KB HTML, **24 thẻ phim**, đủ dải chip nguồn |
+| API | `/api/v1/movies/latest` trả phim thật từ KKPhim |
+| Trang xem phim | có thẻ `<video>`, nút tập trước/sau, chip `Tập n/x`, bảng Chương |
+| CORS | `Access-Control-Allow-Origin: http://192.168.100.169:3000` |
+| Đường NFO | trỏ địa chỉ công khai, **không lộ `backend:8080`** ra HTML |
+| Nguồn kho riêng | trả rỗng vì chưa cắm khoá — đúng cách xuống thang đã thiết kế |
+
+Các container sẵn có trên máy (`webui-film-*`, `socialdownloader`, `studocu`…) không bị
+đụng tới; cổng 3000 và 8081 đều trống trước khi dùng.
+
 ### Kho phim riêng trên homelab
 
 Nguồn thứ ba, mã `homelab`, đọc kho phim tự lưu ở `192.168.100.169`. Đây là chỗ duy

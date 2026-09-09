@@ -1,0 +1,65 @@
+# RapPhim WareHouse - chay ca hai tang bang Docker.
+#
+# Cong 8080 tren homelab da co ZCloud dung roi, nen backend duoc dua ra ngoai o 8081.
+# Ben trong mang cua Docker no van nghe o 8080 nhu binh thuong.
+#
+#   docker compose up -d --build
+#
+# Cac gia tri thay doi theo may dat trong tep .env dat canh tep nay (xem .env.example).
+
+services:
+  backend:
+    build:
+      context: ./backend
+    image: rapphim-backend:latest
+    container_name: rapphim-backend
+    restart: unless-stopped
+    ports:
+      - "${BACKEND_PORT:-8081}:8080"
+    environment:
+      # Dia chi cua frontend nhin tu trinh duyet - thieu cai nay thi trinh duyet chan
+      # moi loi goi API vi khac goc.
+      RAPPHIM_CORS_ORIGINS: ${PUBLIC_WEB_URL:-http://localhost:3000}
+
+      # Kho phim rieng. De trong thi nguon homelab tu tat, phan con lai van chay.
+      ZCLOUD_API_KEY: ${ZCLOUD_API_KEY:-}
+      ZCLOUD_PASSWORD: ${ZCLOUD_PASSWORD:-}
+      ZCLOUD_PREFIX: ${ZCLOUD_PREFIX:-}
+      # Tu trong container, "localhost" la chinh container do - phai goi qua dia chi
+      # cua may chu.
+      RAPPHIM_ZCLOUD_BASE_URL: ${ZCLOUD_BASE_URL:-http://host.docker.internal:8080}
+
+      # Metadata cho file NFO. Thieu thi cac endpoint TMDB tra 503, phan con lai chay.
+      TMDB_ACCESS_TOKEN: ${TMDB_ACCESS_TOKEN:-}
+      TMDB_API_KEY: ${TMDB_API_KEY:-}
+    extra_hosts:
+      # Cho phep goi nguoc ve dich vu dang chay tren chinh may chu (ZCloud).
+      - "host.docker.internal:host-gateway"
+    networks:
+      - rapphim
+
+  web:
+    build:
+      context: ./frontend
+      args:
+        # Dia chi nay bi nhung thang vao ma phia trinh duyet luc build, nen phai la
+        # dia chi ma may cua nguoi xem goi toi duoc - khong dung ten dich vu Docker.
+        NEXT_PUBLIC_API_BASE_URL: ${PUBLIC_API_URL:-http://localhost:8081}
+    image: rapphim-web:latest
+    container_name: rapphim-web
+    restart: unless-stopped
+    ports:
+      - "${WEB_PORT:-3000}:3000"
+    environment:
+      NEXT_PUBLIC_API_BASE_URL: ${PUBLIC_API_URL:-http://localhost:8081}
+      # Ma chay tren server goi thang trong mang Docker. Da do that: tu trong container
+      # goi ra dia chi LAN cua may chu thi treo, goi ten dich vu thi chay.
+      API_INTERNAL_URL: http://backend:8080
+    depends_on:
+      - backend
+    networks:
+      - rapphim
+
+networks:
+  rapphim:
+    driver: bridge

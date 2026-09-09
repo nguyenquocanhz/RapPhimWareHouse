@@ -11,7 +11,25 @@ import type {
   TmdbStatus,
 } from "@/lib/types";
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8080";
+/**
+ * Dia chi API ma *trinh duyet* goi toi.
+ *
+ * <p>Bi nhung thang vao ma luc build nen phai la dia chi may nguoi xem voi toi duoc.</p>
+ */
+const PUBLIC_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8080";
+
+/**
+ * Dia chi API dung cho ma chay tren server.
+ *
+ * <p>Khi ca hai tang cung chay bang Docker, tien trinh Next nam trong mang rieng cua
+ * Docker: no goi thang {@code http://backend:8080} duoc, con dia chi LAN cua may chu
+ * thi khong chac ra toi (da gap that: goi ra dia chi LAN bi treo, goi ten dich vu thi
+ * chay). Nen hai chieu phai la hai dia chi khac nhau.</p>
+ */
+const BASE_URL =
+  typeof window === "undefined"
+    ? (process.env.API_INTERNAL_URL ?? PUBLIC_BASE_URL)
+    : PUBLIC_BASE_URL;
 
 /** Loi tra ve tu backend, giu lai ma loi de trang goi co the phan biet 404 voi loi khac. */
 export class ApiRequestError extends Error {
@@ -220,7 +238,9 @@ export interface TmdbDiscoverParams {
  */
 export function nfoUrl(slug: string, provider?: string): string {
   const query = provider && provider !== "kkphim" ? `?provider=${provider}` : "";
-  return `${BASE_URL}/api/v1/movies/${slug}/nfo${query}`;
+  // Day la lien ket trinh duyet mo, khong phai loi goi tu server - luon dung dia
+  // chi cong khai du dang render o phia nao.
+  return `${PUBLIC_BASE_URL}/api/v1/movies/${slug}/nfo${query}`;
 }
 
 /**
