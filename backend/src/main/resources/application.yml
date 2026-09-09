@@ -1,0 +1,77 @@
+server:
+  port: 8080
+  compression:
+    enabled: true
+    mime-types: application/json
+  error:
+    include-message: always
+
+spring:
+  application:
+    name: rapphim-warehouse
+  jackson:
+    default-property-inclusion: non_null
+
+rapphim:
+  cors:
+    allowed-origins: http://localhost:3000,http://127.0.0.1:3000
+  provider:
+    connect-timeout: 5s
+    read-timeout: 20s
+    kkphim:
+      base-url: https://phimapi.com
+      cdn-image: https://phimimg.com
+    nguonc:
+      base-url: https://phim.nguonc.com
+      cdn-image: ""
+
+  # TheMovieDB: nguon metadata de sinh file NFO cho Kodi / Jellyfin / Emby.
+  # Khong dat khoa truc tiep o day. Dat bien moi truong truoc khi chay:
+  #   TMDB_ACCESS_TOKEN  token doc v4  (uu tien)
+  #   TMDB_API_KEY       khoa API v3
+  # Thieu ca hai thi cac endpoint TMDB tra 503 TMDB_NOT_CONFIGURED,
+  # rieng endpoint xuat NFO van chay bang du lieu cua nguon phim.
+  tmdb:
+    base-url: https://api.themoviedb.org/3
+    image-base-url: https://image.tmdb.org/t/p
+    language: vi-VN
+    access-token: ${TMDB_ACCESS_TOKEN:}
+    api-key: ${TMDB_API_KEY:}
+
+  # Kho phim rieng tren homelab (ZCloud - FastAPI + S3).
+  # Khong dat khoa truc tiep o day. Dat bien moi truong truoc khi chay:
+  #   ZCLOUD_API_KEY   khoa goi thang, gui qua header x-api-key  (uu tien)
+  #   ZCLOUD_PASSWORD  mat khau dang nhap, dung khi chua tao khoa
+  # Thieu ca hai thi nguon homelab tra ve rong, phan con lai cua API van chay.
+  zcloud:
+    base-url: http://192.168.100.169:8080
+    api-key: ${ZCLOUD_API_KEY:}
+    password: ${ZCLOUD_PASSWORD:}
+    # Thu muc goc chua phim trong kho. De rong nghia la quet ca kho.
+    prefix: ${ZCLOUD_PREFIX:}
+    presign-expiry: 6h
+    page-size: 1000
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: alpha
+    tags-sorter: alpha
+    display-request-duration: true
+    doc-expansion: none
+  default-produces-media-type: application/json
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,caches,metrics
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    com.rapphim.warehouse: INFO

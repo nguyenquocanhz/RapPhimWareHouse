@@ -1,0 +1,29 @@
+# Build output
+backend/target/
+frontend/.next/
+frontend/out/
+frontend/next-env.d.ts
+
+# Dependencies
+node_modules/
+
+# Bien moi truong cuc bo
+.env
+.env.local
+.env*.local
+
+# IDE
+.idea/
+.vscode/
+*.iml
+.classpath
+.project
+.settings/
+
+# He dieu hanh
+Thumbs.db
+.DS_Store
+
+# Log
+*.log
+npm-debug.log*

@@ -1,0 +1,248 @@
+@import "tailwindcss";
+
+/*
+ * Bang mau lay cam hung tu YouTube: nen gan nhu den, khoi noi mau xam,
+ * diem nhan do. Mac dinh la giao dien toi; them class "light" vao the <html>
+ * de doi sang giao dien sang - moi token ben duoi se tu doi theo.
+ */
+:root {
+  --canvas: #0f0f0f;
+  --surface: #212121;
+  --surface-hover: #272727;
+  --surface-strong: #383838;
+  --border: #303030;
+  --fg: #f1f1f1;
+  --muted: #aaaaaa;
+  --brand: #ff0033;
+  --brand-fg: #ffffff;
+  --chip: #272727;
+  --chip-hover: #3f3f3f;
+  --chip-active: #f1f1f1;
+  --chip-active-fg: #0f0f0f;
+  --skeleton: #272727;
+  --overlay: rgba(0, 0, 0, 0.8);
+}
+
+html.light {
+  --canvas: #ffffff;
+  --surface: #f2f2f2;
+  --surface-hover: #e5e5e5;
+  --surface-strong: #d9d9d9;
+  --border: #e5e5e5;
+  --fg: #0f0f0f;
+  --muted: #606060;
+  --brand: #cc0000;
+  --brand-fg: #ffffff;
+  --chip: #f2f2f2;
+  --chip-hover: #e0e0e0;
+  --chip-active: #0f0f0f;
+  --chip-active-fg: #ffffff;
+  --skeleton: #e5e5e5;
+  --overlay: rgba(0, 0, 0, 0.75);
+}
+
+@theme inline {
+  --color-canvas: var(--canvas);
+  --color-surface: var(--surface);
+  --color-surface-hover: var(--surface-hover);
+  --color-surface-strong: var(--surface-strong);
+  --color-border: var(--border);
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-brand: var(--brand);
+  --color-brand-fg: var(--brand-fg);
+  --color-chip: var(--chip);
+  --color-chip-hover: var(--chip-hover);
+  --color-chip-active: var(--chip-active);
+  --color-chip-active-fg: var(--chip-active-fg);
+  --color-skeleton: var(--skeleton);
+
+  --font-sans: var(--font-roboto), "Segoe UI", Arial, sans-serif;
+
+  --spacing-masthead: 56px;
+  --spacing-sidebar: 240px;
+  --spacing-rail: 72px;
+
+  /* Man hinh rat rong van giu the phim o kich thuoc de nhin. */
+  --breakpoint-3xl: 1920px;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background-color: var(--canvas);
+  color: var(--fg);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Thanh cuon manh, mau nhat - giong cam giac cua YouTube tren desktop. */
+@media (pointer: fine) {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--surface-strong) transparent;
+  }
+
+  *::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background-color: var(--surface-strong);
+    border-radius: 999px;
+  }
+
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+}
+
+/*
+ * Nut doi giao dien: doi icon bang CSS chu khong bang state React.
+ * Nho vay HTML render tren server va tren client luon giong nhau, khong bi
+ * canh bao hydrate du script trong <head> da doi class truoc do.
+ */
+.icon-when-dark {
+  display: block;
+}
+
+.icon-when-light {
+  display: none;
+}
+
+html.light .icon-when-dark {
+  display: none;
+}
+
+html.light .icon-when-light {
+  display: block;
+}
+
+/*
+ * Nut luu phim: hai trang thai dung chung mot cay DOM, CSS chon phan nao hien
+ * dua tren thuoc tinh data-saved. Giu markup giong nhau giua server va client.
+ */
+[data-saved="true"] .save-outline,
+[data-saved="false"] .save-filled {
+  display: none;
+}
+
+/* Dai chip cuon ngang: an thanh cuon nhung van keo duoc. */
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Cat tieu de sau 2 dong nhu tieu de video tren YouTube. */
+.line-clamp-2-title {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Noi dung mo ta phim tu nguon co the chua the HTML. */
+.movie-content p {
+  margin-bottom: 0.75rem;
+}
+
+.movie-content a {
+  color: var(--fg);
+  text-decoration: underline;
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background-color: var(--skeleton);
+}
+
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background-image: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0,
+    rgba(255, 255, 255, 0.06) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  animation: shimmer 1.6s infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton::after {
+    animation: none;
+  }
+}
+
+/*
+ * Thong bao trong trinh phat: truot len khi hien, mo dan khi bien mat. Khong dung
+ * `display` de an vi nhu vay se nhay cai mot, khong kip nhin thay nut hoan tac.
+ */
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes toast-out {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(4px) scale(0.98);
+  }
+}
+
+.player-toast {
+  animation: toast-in 200ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.player-toast-leaving {
+  animation: toast-out 220ms ease-in both;
+}
+
+/* Vach dem nguoc cho biet thong bao sap tat, de nguoi dung kip bam hoan tac. */
+@keyframes toast-countdown {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+
+.player-toast-bar {
+  transform-origin: left center;
+  animation: toast-countdown linear both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .player-toast,
+  .player-toast-leaving,
+  .player-toast-bar {
+    animation: none;
+  }
+}
