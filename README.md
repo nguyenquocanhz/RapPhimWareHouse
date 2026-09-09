@@ -287,7 +287,24 @@ cp .env.example .env      # sửa cho hợp máy của bạn
 docker compose up -d --build
 ```
 
-Xong thì mở `http://<địa-chỉ-máy>:3000`.
+Xong thì mở `http://<địa-chỉ-máy>:7100`.
+
+#### Đưa lên máy khác bằng `deploy.sh`
+
+```bash
+./deploy.sh              # gửi mã, build lại, khởi động
+./deploy.sh --no-build   # chỉ gửi mã rồi khởi động lại
+./deploy.sh --logs       # xem log đang chạy
+```
+
+Máy đích không có `rsync` nên script dùng `tar` qua SSH, và **xoá thư mục mã nguồn cũ
+trước khi giải nén** - giải nén tar chỉ ghi đè lên tệp đang có chứ không xoá tệp đã bị
+xoá ở bản mới. Thiếu bước này thì đổi tên một trang xong deploy, trang cũ vẫn còn trên
+máy đích và vẫn build vào ảnh (đã gặp thật khi đổi trang quản trị sang `/cms`). Tệp
+`.env` nằm ở gốc nên không bị đụng tới, và lần đầu chạy thì script tự tạo nó từ mẫu.
+
+Script chờ tới khi cả API lẫn web thật sự trả lời rồi mới báo xong, chứ không chỉ báo
+"container đã khởi động".
 
 #### Cài nhanh bằng ảnh dựng sẵn
 
