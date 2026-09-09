@@ -16,6 +16,19 @@ on:
   push:
     branches: [main]
     tags: ["v*"]
+    # Sua tai lieu thi khong dung lai anh. Khong loc thi moi lan sua mot dong
+    # trong README cung keo theo bon lan build, trong do hai lan tren runner ARM.
+    #
+    # Luu y khi doc ket qua: bo loc nay lam workflow KHONG CHAY, chu khong phai
+    # chay roi bao qua. Nen dung dat no lam dieu kien bat buoc de merge - mot PR
+    # chi sua tai lieu se nam cho mai mot phep kiem khong bao gio toi.
+    #
+    # Bo loc ap cho ca push nhan phien ban. Muon phat hanh tu mot commit chi co
+    # tai lieu thi chay tay bang workflow_dispatch o duoi.
+    paths-ignore:
+      - "docs/**"
+      - "**.md"
+      - ".gitignore"
   workflow_dispatch:
 
 env:
