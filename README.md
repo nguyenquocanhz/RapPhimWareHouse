@@ -355,7 +355,7 @@ Các container sẵn có trên máy (`webui-film-*`, `socialdownloader`, `studoc
 
 ### Trang quản trị: tự thêm nguồn phim
 
-`/quan-tri` cho phép thêm nguồn mà **không phải sửa mã nguồn rồi build lại**. Khai báo
+`/cms` cho phép thêm nguồn mà **không phải sửa mã nguồn rồi build lại**. Khai báo
 địa chỉ là chạy được ngay.
 
 Việc này khả thi vì phần lớn trang phim Việt là bản sao API của KKPhim, chỉ khác tên
