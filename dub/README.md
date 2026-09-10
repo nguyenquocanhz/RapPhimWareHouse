@@ -1,0 +1,49 @@
+# RapPhim Dub Service (`rapphim-dub`)
+
+Microservice sinh **giọng thuyết minh tiếng Việt** cho phim, tách riêng khỏi backend Java
+vì OCR / dịch / TTS là ML nặng.
+
+## Pipeline mục tiêu
+
+```
+phim (hardsub) ──▶ OCR khung hình ──▶ cue (chữ + mốc giờ)
+                                          │
+                        dịch zh/en → vi ──┤
+                                          ▼
+                         TTS (Piper offline | Edge online)
+                                          ▼
+                  manifest cue + audio ──▶ player phát đồng bộ, "ducking" tiếng gốc
+```
+
+Không re-mux ở server: player phát từng đoạn audio theo mốc giờ và giảm tiếng gốc lúc đọc.
+
+## Lộ trình theo lát cắt
+
+- **Phase 1 (đang có):** dịch vụ + API job + **TTS từ cue có sẵn** (Edge chạy được; Piper
+  cần model). Đây là phần chạy/kiểm tra được trước, để khi OCR xong thì đường phát đã sẵn.
+- **Phase 2:** `POST /api/dub/from-video` — OCR hardsub bằng PaddleOCR/`videocr` + ffmpeg
+  → cue, rồi nối vào bước TTS.
+- **Phase 3:** dịch zh/en → vi (offline hoặc online).
+- **Phase 4:** tích hợp player (nút "Thuyết minh", chọn engine/giọng, phát đồng bộ + ducking).
+
+## API (Phase 1)
+
+| Method | Path | Mô tả |
+|---|---|---|
+| GET | `/health` | Kiểm tra sống |
+| GET | `/api/voices` | Danh sách giọng theo engine |
+| POST | `/api/dub` | Body `{cues:[{start,end,text}], engine:"edge"\|"piper", voice?}` → `{jobId}` |
+| GET | `/api/dub/{jobId}` | Trạng thái + cue kèm URL audio |
+| GET | `/api/dub/{jobId}/media/{name}` | Tệp audio của cue |
+
+## Chạy thử cục bộ
+
+```bash
+pip install -r requirements.txt
+DUB_MEDIA_DIR=./_media uvicorn app:app --port 8080
+```
+
+## Biến môi trường
+
+- `DUB_MEDIA_DIR` — thư mục lưu audio (mặc định `/data/dub`).
+- `PIPER_BIN`, `PIPER_MODEL_DIR` — cho engine Piper offline (`<voice>.onnx`).
