@@ -1,13 +1,18 @@
 package com.rapphim.warehouse.config;
 
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.http.client.ClientHttpRequestFactoryBuilder;
 import org.springframework.boot.http.client.HttpClientSettings;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.ClientHttpRequestFactory;
+import org.springframework.http.client.JdkClientHttpRequestFactory;
 import org.springframework.web.client.RestClient;
+
+import java.net.http.HttpClient;
 
 /**
  * Tao san hai {@link RestClient} rieng cho tung nguon phim, kem timeout va header mac dinh.
@@ -38,10 +43,30 @@ public class RestClientConfig {
 
     /** Factory dung chung, gioi han thoi gian cho de mot nguon cham khong lam treo API. */
     @Bean
+    @Primary
     public ClientHttpRequestFactory providerRequestFactory() {
         HttpClientSettings settings = HttpClientSettings.defaults()
                 .withTimeouts(properties.connectTimeout(), properties.readTimeout());
         return ClientHttpRequestFactoryBuilder.detect().build(settings);
+    }
+
+    /**
+     * Factory rieng cho VSMOV, ep giao thuc HTTP/1.1.
+     *
+     * <p>VSMOV da chuyen site sang sau Cloudflare. Bo loc bot cua Cloudflare chan ket noi
+     * HTTP/2 cua client Java (curl/python van vao duoc). Ep dung HTTP/1.1 bang client JDK
+     * rieng thuong qua duoc bo loc theo giao thuc - va van la cau hinh chuan, khong gia
+     * dang trinh duyet.</p>
+     */
+    @Bean
+    public ClientHttpRequestFactory vsmovRequestFactory() {
+        HttpClient client = HttpClient.newBuilder()
+                .version(HttpClient.Version.HTTP_1_1)
+                .connectTimeout(properties.connectTimeout())
+                .build();
+        JdkClientHttpRequestFactory factory = new JdkClientHttpRequestFactory(client);
+        factory.setReadTimeout(properties.readTimeout());
+        return factory;
     }
 
     @Bean
@@ -55,7 +80,8 @@ public class RestClientConfig {
     }
 
     @Bean
-    public RestClient vsmovRestClient(RestClient.Builder builder, ClientHttpRequestFactory factory) {
+    public RestClient vsmovRestClient(RestClient.Builder builder,
+                                      @Qualifier("vsmovRequestFactory") ClientHttpRequestFactory factory) {
         return baseClient(builder, factory, properties.vsmov().baseUrl());
     }
 
