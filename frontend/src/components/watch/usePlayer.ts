@@ -68,7 +68,19 @@ export function usePlayer(src: string | null, kind: SourceKind = "hls") {
   const [state, setState] = useState<PlayerState>(INITIAL);
 
   const patch = useCallback((changes: Partial<PlayerState>) => {
-    setState((current) => ({ ...current, ...changes }));
+    setState((current) => {
+      // Bo qua cap nhat rong: su kien `progress` / `timeupdate` ban ra rat day, neu
+      // lan nao cung tao object moi thi trinh phat render lai lien tuc du chang doi gi.
+      // Tra ve dung tham chieu cu de React bo qua vong render.
+      let changed = false;
+      for (const key in changes) {
+        if (current[key as keyof PlayerState] !== changes[key as keyof PlayerState]) {
+          changed = true;
+          break;
+        }
+      }
+      return changed ? { ...current, ...changes } : current;
+    });
   }, []);
 
   // Nap nguon phat.
@@ -100,7 +112,19 @@ export function usePlayer(src: string | null, kind: SourceKind = "hls") {
       return;
     }
 
-    const hls = new Hls({ enableWorker: false });
+    const hls = new Hls({
+      // Chay giai ma / ghep luong tren worker rieng thay vi luong chinh. Truoc day tat,
+      // la nguyen nhan chinh gay giat: moi doan luong xu ly ngay tren luong chinh, chan
+      // ca viec ve giao dien. Bat len thi phat muot va dieu khien khong lag.
+      enableWorker: true,
+      // Dem truoc nhieu hon (mac dinh 30s) de it khi phai dung cho tai giua chung.
+      maxBufferLength: 60,
+      maxMaxBufferLength: 120,
+      // Nhung chi giu 90s da xem phia sau, tranh phinh RAM lam lag dan tren tap dai.
+      backBufferLength: 90,
+      // VOD khong can che do do tre thap; tat cho bot viec thua.
+      lowLatencyMode: false,
+    });
     hlsRef.current = hls;
 
     hls.on(Hls.Events.MANIFEST_PARSED, (_event, data) => {
