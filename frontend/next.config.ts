@@ -13,6 +13,10 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "*.phimimg.com" },
       { protocol: "https", hostname: "phim.nguonc.com" },
       { protocol: "https", hostname: "*.nguonc.com" },
+      // VSMOV phuc vu anh ngay tren ten mien chinh, va mot so anh qua CDN nguon.vsphim.com.
+      { protocol: "https", hostname: "vsmov.com" },
+      { protocol: "https", hostname: "*.vsmov.com" },
+      { protocol: "https", hostname: "*.vsphim.com" },
       // Poster va anh dien vien cua trang Kham pha lay tu CDN cua TheMovieDB.
       { protocol: "https", hostname: "image.tmdb.org" },
     ],
