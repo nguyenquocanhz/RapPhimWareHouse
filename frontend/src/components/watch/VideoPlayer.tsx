@@ -15,6 +15,7 @@ import {
   DefaultViewIcon,
   ExitFullscreenIcon,
   FullscreenIcon,
+  MicIcon,
   NextEpisodeIcon,
   PauseIcon,
   PictureInPictureIcon,
@@ -39,6 +40,7 @@ import {
   useAudioChain,
   type AudioChain,
 } from "@/components/watch/useAudioChain";
+import { useDub } from "@/components/watch/useDub";
 import { usePlayer, type SourceKind } from "@/components/watch/usePlayer";
 import {
   PREVIEW_HEIGHT,
@@ -217,6 +219,9 @@ export function VideoPlayer({
   );
 
   const audio = useAudioChain(videoRef, src);
+
+  // Che do thuyet minh: sinh giong doc long (OCR -> dich -> TTS) roi phat dong bo.
+  const dub = useDub(videoRef, src);
 
   // ------------------------------------------------------------ anh trong anh
 
@@ -791,6 +796,28 @@ export function VideoPlayer({
         </div>
       )}
 
+      {/* Thuyet minh: bao tien do khi dang tao, hoac loi */}
+      {dub.status === "working" && (
+        <div className="absolute left-4 top-4 flex items-center gap-2 rounded-lg bg-black/80 px-3 py-2 text-xs text-white shadow-lg backdrop-blur-sm">
+          <span className="size-3.5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+          <span>
+            Đang tạo thuyết minh — {dubPhaseLabel(dub.progress?.phase)}
+            {dub.progress && dub.progress.total > 0
+              ? ` ${Math.round((dub.progress.done / dub.progress.total) * 100)}%`
+              : "…"}
+          </span>
+        </div>
+      )}
+      {dub.status === "error" && dub.error && (
+        <button
+          type="button"
+          onClick={() => dub.start()}
+          className="absolute left-4 top-4 max-w-[70%] rounded-lg bg-black/85 px-3 py-2 text-left text-xs text-white shadow-lg backdrop-blur-sm"
+        >
+          Thuyết minh lỗi: {dub.error} — bấm để thử lại.
+        </button>
+      )}
+
       {/* Nut phat lon o giua khi dang dung */}
       {!state.playing && !state.waiting && !state.error && !flash && (
         <button
@@ -1124,6 +1151,36 @@ export function VideoPlayer({
                 </span>
               </ControlButton>
             )}
+
+            <ControlButton
+              label={
+                dub.status === "working"
+                  ? "Đang tạo thuyết minh… (bấm để huỷ)"
+                  : dub.status === "ready"
+                    ? dub.enabled
+                      ? "Tắt thuyết minh"
+                      : "Bật thuyết minh"
+                    : dub.status === "error"
+                      ? "Thuyết minh lỗi — thử lại"
+                      : "Thuyết minh (tạo giọng đọc tiếng Việt)"
+              }
+              onClick={() => {
+                if (dub.status === "working") dub.stop();
+                else if (dub.status === "ready") dub.toggle();
+                else dub.start();
+              }}
+            >
+              <span className="relative grid place-items-center">
+                {dub.status === "working" ? (
+                  <span className="size-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                ) : (
+                  <MicIcon />
+                )}
+                {dub.status === "ready" && dub.enabled && (
+                  <span className="absolute -bottom-1 left-1/2 h-0.5 w-4 -translate-x-1/2 rounded-full bg-brand" />
+                )}
+              </span>
+            </ControlButton>
 
             <SettingsMenu
               open={panel !== null}
@@ -1793,6 +1850,14 @@ function MenuOption({
 }
 
 /** 65 giay thanh "1:05", 3725 giay thanh "1:02:05". */
+/** Ten giai doan thuyet minh cho nguoi dung doc. */
+function dubPhaseLabel(phase?: string): string {
+  if (phase === "ocr") return "nhận chữ";
+  if (phase === "translate") return "dịch";
+  if (phase === "tts") return "tạo giọng";
+  return "đang xử lý";
+}
+
 function formatTime(seconds: number): string {
   if (!Number.isFinite(seconds) || seconds < 0) return "0:00";
 
