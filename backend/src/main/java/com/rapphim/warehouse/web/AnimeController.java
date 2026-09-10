@@ -6,7 +6,7 @@ import com.rapphim.warehouse.common.PageResponse;
 import com.rapphim.warehouse.dto.AnimeDetail;
 import com.rapphim.warehouse.dto.AnimeSummary;
 import com.rapphim.warehouse.exception.ResourceNotFoundException;
-import com.rapphim.warehouse.service.AniListService;
+import com.rapphim.warehouse.service.AnimeService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -27,33 +27,35 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 /**
- * Metadata anime tu AniList - nguon hop phap, khong phat video.
+ * Metadata anime - nguon hop phap, khong phat video.
  *
- * <p>Dung de lam giau trang anime: diem, tieu de romaji/goc, hang phim, tap sap phat.
- * Khong can khoa nen cac endpoint nay luon dung duoc.</p>
+ * <p>AniList lam nguon chinh, Jikan (MyAnimeList) du phong: het nguon nay thi tu dong
+ * sang nguon kia o danh sach / tim kiem / the loai. Moi ket qua mang {@code source} de
+ * biet id thuoc nguon nao; goi chi tiet phai kem dung {@code source} do vi hai nguon
+ * co khong gian ma khac nhau.</p>
  */
 @RestController
 @RequestMapping("/api/v1")
 @Validated
-@Tag(name = "AniList", description = "Metadata anime tu AniList (khong phat video)")
-public class AniListController {
+@Tag(name = "Anime", description = "Metadata anime (AniList chinh, Jikan du phong)")
+public class AnimeController {
 
-    private final AniListService service;
+    private final AnimeService service;
 
-    public AniListController(AniListService service) {
+    public AnimeController(AnimeService service) {
         this.service = service;
     }
 
     @GetMapping("/anime/trending")
     @Operation(
-            summary = "Anime thinh hanh tren AniList",
-            description = "Danh sach anime dang duoc quan tam nhat, sap theo do thinh hanh. "
-                    + "Dung de lam trang kham pha anime doc lap voi kho phim cua nguon.")
+            summary = "Anime thinh hanh",
+            description = "Danh sach anime dang duoc quan tam nhat. Het AniList thi tu dong "
+                    + "chuyen sang Jikan (MyAnimeList) - kiem tra truong `source` de biet nguon.")
     public ResponseEntity<ApiResponse<PageResponse<AnimeSummary>>> trending(
             @Parameter(description = "Trang can lay, bat dau tu 1", example = "1")
             @RequestParam(defaultValue = "1") @Min(1) @Max(500) int page,
 
-            @Parameter(description = "So ket qua moi trang, toi da 50", example = "24")
+            @Parameter(description = "So ket qua moi trang", example = "24")
             @RequestParam(defaultValue = "24") @Min(1) @Max(50) int perPage) {
 
         return ResponseEntity.ok(ApiResponse.ok(service.trending(page, perPage)));
@@ -61,8 +63,8 @@ public class AniListController {
 
     @GetMapping("/anime/search")
     @Operation(
-            summary = "Tim anime tren AniList",
-            description = "Tim theo tu khoa, sap theo do khop va do thinh hanh.")
+            summary = "Tim anime",
+            description = "Tim theo tu khoa. Het AniList thi tu dong chuyen sang Jikan.")
     public ResponseEntity<ApiResponse<PageResponse<AnimeSummary>>> search(
             @Parameter(description = "Tu khoa tim kiem", example = "one piece", required = true)
             @RequestParam @NotBlank String keyword,
@@ -70,7 +72,7 @@ public class AniListController {
             @Parameter(description = "Trang can lay, bat dau tu 1", example = "1")
             @RequestParam(defaultValue = "1") @Min(1) @Max(500) int page,
 
-            @Parameter(description = "So ket qua moi trang, toi da 50", example = "24")
+            @Parameter(description = "So ket qua moi trang", example = "24")
             @RequestParam(defaultValue = "24") @Min(1) @Max(50) int perPage) {
 
         return ResponseEntity.ok(ApiResponse.ok(service.search(keyword, page, perPage)));
@@ -78,30 +80,35 @@ public class AniListController {
 
     @GetMapping("/anime/{id}")
     @Operation(
-            summary = "Chi tiet mot anime tren AniList",
-            description = "Metadata day du theo ma AniList: tom tat, so tap, diem, the loai, "
-                    + "hang phim, va tap sap phat neu con dang chieu.")
+            summary = "Chi tiet mot anime",
+            description = "Metadata day du theo ma. PHAI kem dung `source` cua ma do (lay tu "
+                    + "truong `source` trong ket qua danh sach), vi AniList va MyAnimeList co "
+                    + "khong gian ma khac nhau. Chi tiet KHONG du phong sang nguon khac.")
     @ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(
                     responseCode = "200", description = "Lay metadata thanh cong"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                    responseCode = "404", description = "AniList khong co ban ghi voi ma nay",
+                    responseCode = "404", description = "Nguon khong co ban ghi voi ma nay",
                     content = @Content(schema = @Schema(implementation = ApiError.class)))
     })
     public ResponseEntity<ApiResponse<AnimeDetail>> details(
-            @Parameter(description = "Ma anime tren AniList", example = "21", required = true)
-            @PathVariable int id) {
+            @Parameter(description = "Ma anime tren nguon tuong ung", example = "21", required = true)
+            @PathVariable int id,
 
-        AnimeDetail detail = service.details(id)
-                .orElseThrow(() -> new ResourceNotFoundException("ANILIST_NOT_FOUND",
-                        "AniList khong co ban ghi anime voi ma '" + id + "'"));
+            @Parameter(description = "Nguon giu ma nay", example = "anilist",
+                    schema = @Schema(allowableValues = {"anilist", "jikan"}))
+            @RequestParam(defaultValue = "anilist") String source) {
+
+        AnimeDetail detail = service.details(id, source)
+                .orElseThrow(() -> new ResourceNotFoundException("ANIME_NOT_FOUND",
+                        "Nguon '" + source + "' khong co anime voi ma '" + id + "'"));
 
         return ResponseEntity.ok(ApiResponse.ok(detail));
     }
 
     @GetMapping("/anime/genres")
     @Operation(
-            summary = "Danh muc the loai anime cua AniList",
+            summary = "Danh muc the loai anime",
             description = "Danh sach ten the loai, dung de dien bo loc phia giao dien.")
     public ResponseEntity<ApiResponse<List<String>>> genres() {
         return ResponseEntity.ok(ApiResponse.ok(service.genres()));

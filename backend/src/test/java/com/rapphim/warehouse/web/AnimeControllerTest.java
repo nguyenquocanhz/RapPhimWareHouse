@@ -4,7 +4,7 @@ import com.rapphim.warehouse.common.PageMeta;
 import com.rapphim.warehouse.common.PageResponse;
 import com.rapphim.warehouse.dto.AnimeDetail;
 import com.rapphim.warehouse.dto.AnimeSummary;
-import com.rapphim.warehouse.service.AniListService;
+import com.rapphim.warehouse.service.AnimeService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,41 +24,50 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * Kiem tra tang web cua AniList: dinh dang envelope, kiem tham so, va 404 khi
- * khong co ban ghi. Tang service duoc mock nen test khong goi ra AniList that.
+ * Kiem tra tang web anime: envelope, kiem tham so, dinh tuyen chi tiet theo source,
+ * va 404. Facade duoc mock nen test khong goi ra AniList/Jikan that.
  */
-@WebMvcTest(AniListController.class)
+@WebMvcTest(AnimeController.class)
 @AutoConfigureMockMvc
-class AniListControllerTest {
+class AnimeControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
 
     @MockitoBean
-    private AniListService service;
+    private AnimeService service;
 
-    private static AnimeSummary sampleSummary() {
+    private static AnimeSummary sampleSummary(String source) {
         return new AnimeSummary(
                 "21", "One Piece", "One Piece", "ワンピース",
                 "TV", 1000, 1999, 88,
                 List.of("Action", "Adventure"),
-                "https://img.anili.st/cover.jpg",
-                "https://img.anili.st/banner.jpg",
-                "https://anilist.co/anime/21");
+                "https://img/cover.jpg", "https://img/banner.jpg",
+                "https://anilist.co/anime/21", source);
+    }
+
+    private static AnimeDetail sampleDetail(String source) {
+        return new AnimeDetail(
+                "21", "One Piece", "One Piece", "One Piece", "ワンピース",
+                "Mot cau chuyen hai tac.", "TV", "RELEASING", 1000, 24,
+                1999, "FALL", 88, 500000,
+                List.of("Action"), List.of("Toei Animation"),
+                "https://img/cover.jpg", "https://img/banner.jpg", "1999-10-20",
+                new AnimeDetail.NextAiring(1001, "2026-01-01T09:30:00Z"),
+                "https://anilist.co/anime/21", source);
     }
 
     @Test
-    @DisplayName("trending: tra ve envelope co items")
+    @DisplayName("trending: envelope co items kem source")
     void trendingReturnsItems() throws Exception {
         given(service.trending(1, 24))
-                .willReturn(PageResponse.of(List.of(sampleSummary()),
+                .willReturn(PageResponse.of(List.of(sampleSummary("anilist")),
                         PageMeta.of(1, 24, 5000), "anilist"));
 
         mockMvc.perform(get("/api/v1/anime/trending"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.provider").value("anilist"))
                 .andExpect(jsonPath("$.data.items[0].id").value("21"))
+                .andExpect(jsonPath("$.data.items[0].source").value("anilist"))
                 .andExpect(jsonPath("$.data.items[0].scorePercent").value(88));
     }
 
@@ -80,7 +89,7 @@ class AniListControllerTest {
     @DisplayName("search: co keyword thi tra ve items")
     void searchReturnsItems() throws Exception {
         given(service.search(eq("one piece"), anyInt(), anyInt()))
-                .willReturn(PageResponse.of(List.of(sampleSummary()),
+                .willReturn(PageResponse.of(List.of(sampleSummary("anilist")),
                         PageMeta.of(1, 24, 1), "anilist"));
 
         mockMvc.perform(get("/api/v1/anime/search").param("keyword", "one piece"))
@@ -89,40 +98,40 @@ class AniListControllerTest {
     }
 
     @Test
-    @DisplayName("chi tiet: co ban ghi thi tra 200")
-    void detailsFound() throws Exception {
-        AnimeDetail detail = new AnimeDetail(
-                "21", "One Piece", "One Piece", "One Piece", "ワンピース",
-                "Mot cau chuyen hai tac.", "TV", "RELEASING", 1000, 24,
-                1999, "FALL", 88, 500000,
-                List.of("Action"), List.of("Toei Animation"),
-                "https://img.anili.st/cover.jpg", "https://img.anili.st/banner.jpg",
-                "1999-10-20",
-                new AnimeDetail.NextAiring(1001, "2026-01-01T09:30:00Z"),
-                "https://anilist.co/anime/21");
-        given(service.details(21)).willReturn(Optional.of(detail));
+    @DisplayName("chi tiet: mac dinh hoi AniList")
+    void detailsDefaultsToAnilist() throws Exception {
+        given(service.details(21, "anilist")).willReturn(Optional.of(sampleDetail("anilist")));
 
         mockMvc.perform(get("/api/v1/anime/21"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.title").value("One Piece"))
-                .andExpect(jsonPath("$.data.studios[0]").value("Toei Animation"))
-                .andExpect(jsonPath("$.data.nextAiring.episode").value(1001));
+                .andExpect(jsonPath("$.data.source").value("anilist"))
+                .andExpect(jsonPath("$.data.studios[0]").value("Toei Animation"));
     }
 
     @Test
-    @DisplayName("chi tiet: khong co ban ghi thi tra 404")
+    @DisplayName("chi tiet: source=jikan dinh tuyen sang Jikan")
+    void detailsRoutesToJikan() throws Exception {
+        given(service.details(21, "jikan")).willReturn(Optional.of(sampleDetail("jikan")));
+
+        mockMvc.perform(get("/api/v1/anime/21").param("source", "jikan"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.source").value("jikan"));
+    }
+
+    @Test
+    @DisplayName("chi tiet: khong co ban ghi thi 404")
     void detailsNotFound() throws Exception {
-        given(service.details(999999)).willReturn(Optional.empty());
+        given(service.details(999999, "anilist")).willReturn(Optional.empty());
 
         mockMvc.perform(get("/api/v1/anime/999999"))
                 .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.code").value("ANILIST_NOT_FOUND"));
+                .andExpect(jsonPath("$.code").value("ANIME_NOT_FOUND"));
     }
 
     @Test
     @DisplayName("the loai: tra ve mang ten")
     void genresReturnsList() throws Exception {
-        given(service.genres()).willReturn(List.of("Action", "Adventure", "Comedy"));
+        given(service.genres()).willReturn(List.of("Action", "Adventure"));
 
         mockMvc.perform(get("/api/v1/anime/genres"))
                 .andExpect(status().isOk())

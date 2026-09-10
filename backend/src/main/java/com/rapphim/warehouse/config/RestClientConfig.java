@@ -22,15 +22,18 @@ public class RestClientConfig {
     private final TmdbProperties tmdbProperties;
     private final ZCloudProperties zcloudProperties;
     private final AniListProperties aniListProperties;
+    private final JikanProperties jikanProperties;
 
     public RestClientConfig(ProviderProperties properties,
                             TmdbProperties tmdbProperties,
                             ZCloudProperties zcloudProperties,
-                            AniListProperties aniListProperties) {
+                            AniListProperties aniListProperties,
+                            JikanProperties jikanProperties) {
         this.properties = properties;
         this.tmdbProperties = tmdbProperties;
         this.zcloudProperties = zcloudProperties;
         this.aniListProperties = aniListProperties;
+        this.jikanProperties = jikanProperties;
     }
 
     /** Factory dung chung, gioi han thoi gian cho de mot nguon cham khong lam treo API. */
@@ -77,6 +80,19 @@ public class RestClientConfig {
         return builder.clone()
                 .requestFactory(factory)
                 .baseUrl(aniListProperties.baseUrl())
+                .defaultHeader(HttpHeaders.USER_AGENT, USER_AGENT)
+                .defaultHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE)
+                .build();
+    }
+
+    /**
+     * Client cho Jikan (MyAnimeList) - nguon metadata anime du phong. REST, khong khoa.
+     */
+    @Bean
+    public RestClient jikanRestClient(RestClient.Builder builder, ClientHttpRequestFactory factory) {
+        return builder.clone()
+                .requestFactory(factory)
+                .baseUrl(jikanProperties.baseUrl())
                 .defaultHeader(HttpHeaders.USER_AGENT, USER_AGENT)
                 .defaultHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE)
                 .build();

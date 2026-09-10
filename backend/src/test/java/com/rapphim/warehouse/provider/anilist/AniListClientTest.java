@@ -63,6 +63,7 @@ class AniListClientTest {
         assertThat(a.scorePercent()).isEqualTo(88);
         assertThat(a.coverImageUrl()).isEqualTo("https://img/large.jpg");
         assertThat(a.genres()).containsExactly("Action", "Adventure");
+        assertThat(a.source()).isEqualTo("anilist");
     }
 
     @Test
@@ -128,5 +129,6 @@ class AniListClientTest {
         assertThat(d.nextAiring().episode()).isEqualTo(1001);
         assertThat(d.nextAiring().airingAt()).isNotBlank();
         assertThat(d.episodes()).isNull();
+        assertThat(d.source()).isEqualTo("anilist");
     }
 }

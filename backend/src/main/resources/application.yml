@@ -45,6 +45,10 @@ rapphim:
   anilist:
     base-url: https://graphql.anilist.co
 
+  # Jikan (MyAnimeList): nguon metadata anime DU PHONG cho AniList. REST, khong khoa.
+  jikan:
+    base-url: https://api.jikan.moe/v4
+
   # Kho phim rieng tren homelab (ZCloud - FastAPI + S3).
   # Khong dat khoa truc tiep o day. Dat bien moi truong truoc khi chay:
   #   ZCLOUD_API_KEY   khoa goi thang, gui qua header x-api-key  (uu tien)

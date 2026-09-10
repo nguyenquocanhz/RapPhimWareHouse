@@ -72,8 +72,12 @@ public record AnimeDetail(
         @Schema(description = "Tap sap phat tiep theo, rong neu da chieu xong")
         NextAiring nextAiring,
 
-        @Schema(description = "Trang AniList cua anime nay")
-        String siteUrl
+        @Schema(description = "Trang cua anime nay tren nguon")
+        String siteUrl,
+
+        @Schema(description = "Nguon da phuc vu ban ghi nay", example = "anilist",
+                allowableValues = {"anilist", "jikan"})
+        String source
 ) {
 
     /**

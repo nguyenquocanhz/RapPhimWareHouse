@@ -47,7 +47,12 @@ public record AnimeSummary(
         @Schema(description = "Anh banner ngang (URL tuyet doi)")
         String bannerImageUrl,
 
-        @Schema(description = "Trang AniList cua anime nay")
-        String siteUrl
+        @Schema(description = "Trang cua anime nay tren nguon")
+        String siteUrl,
+
+        @Schema(description = "Nguon da phuc vu - QUAN TRONG: id thuoc khong gian ma cua "
+                + "nguon nay, goi chi tiet phai kem dung source", example = "anilist",
+                allowableValues = {"anilist", "jikan"})
+        String source
 ) {
 }

@@ -5,6 +5,7 @@ import com.rapphim.warehouse.common.PageResponse;
 import com.rapphim.warehouse.dto.AnimeDetail;
 import com.rapphim.warehouse.dto.AnimeSummary;
 import com.rapphim.warehouse.exception.UpstreamException;
+import com.rapphim.warehouse.provider.AnimeMetadataProvider;
 import com.rapphim.warehouse.provider.anilist.model.AniListModels;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,7 +41,7 @@ import java.util.Optional;
  * thi khong thu lai: 404 coi la khong co ban ghi, con lai bao thanh loi doc duoc.</p>
  */
 @Component
-public class AniListClient {
+public class AniListClient implements AnimeMetadataProvider {
 
     private static final Logger log = LoggerFactory.getLogger(AniListClient.class);
 
@@ -108,19 +109,27 @@ public class AniListClient {
         this.client = client;
     }
 
+    @Override
+    public String source() {
+        return PROVIDER_CODE;
+    }
+
     // ------------------------------------------------------------------ cong khai
 
     /** Anime thinh hanh nhat hien tai. */
+    @Override
     public PageResponse<AnimeSummary> trending(int page, int perPage) {
         return pageOf(page, perPage, null, List.of("TRENDING_DESC", "POPULARITY_DESC"));
     }
 
     /** Tim anime theo tu khoa. */
+    @Override
     public PageResponse<AnimeSummary> search(String keyword, int page, int perPage) {
         return pageOf(page, perPage, keyword, List.of("SEARCH_MATCH", "POPULARITY_DESC"));
     }
 
     /** Metadata day du cua mot anime; rong neu AniList khong co ma nay. */
+    @Override
     public Optional<AnimeDetail> details(int id) {
         AniListModels.MediaEnvelope env =
                 post(DETAIL_QUERY, Map.of("id", id), AniListModels.MediaEnvelope.class);
@@ -133,6 +142,7 @@ public class AniListClient {
     }
 
     /** Danh sach the loai AniList ho tro, dung cho bo loc. */
+    @Override
     public List<String> genres() {
         AniListModels.GenreEnvelope env = post(GENRE_QUERY, Map.of(), AniListModels.GenreEnvelope.class);
         if (env == null) {
@@ -279,7 +289,8 @@ public class AniListClient {
                 m.genres() == null ? List.of() : m.genres(),
                 m.coverImage() == null ? null : m.coverImage().large(),
                 m.bannerImage(),
-                m.siteUrl());
+                m.siteUrl(),
+                PROVIDER_CODE);
     }
 
     private AnimeDetail toDetail(AniListModels.Media m) {
@@ -304,7 +315,8 @@ public class AniListClient {
                 m.bannerImage(),
                 fuzzyDate(m.startDate()),
                 nextAiring(m.nextAiringEpisode()),
-                m.siteUrl());
+                m.siteUrl(),
+                PROVIDER_CODE);
     }
 
     /** Uu tien tieu de tieng Anh, roi romaji, roi tieng Nhat. */
