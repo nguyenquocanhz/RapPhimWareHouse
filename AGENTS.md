@@ -138,25 +138,24 @@ URL trong nháy kép (ký tự `&` là ký tự dành riêng).
 
 ---
 
-## Cạm bẫy đã biết của repo này (luật cứng)
+## Luật chi tiết theo phạm vi (`.agents/rules/`)
 
-- **Đừng build trên VPS**: `next build` ngốn 2–3 GB. Ảnh multi-arch có sẵn công khai
-  trên GHCR; `docker-compose.prod.yml` chỉ kéo về chạy.
-- **Đừng nướng địa chỉ vào ảnh**: biến `NEXT_PUBLIC_*` bị cố định lúc build. Cho lưu
-  lượng đi qua đường tương đối / proxy, đừng nhét địa chỉ LAN vào lúc `docker build`.
-- **`deploy.sh` phải `rm -rf backend frontend docs` trước khi giải nén** — giải nén
-  đè không xoá file đã bỏ, nên route cũ vẫn sống nếu không dọn.
-- **Dockerfile**: `chown` thư mục dữ liệu **trước** dòng `USER`; volume kế thừa quyền
-  một lần lúc tạo. Đổi dòng `FROM` thì **đọc lại cả file** (lệnh có sẵn, cú pháp tạo
-  user, `HEALTHCHECK` đều phụ thuộc ảnh nền).
-- **Backend JVM**: giữ `mem_limit` + `-Xmx` trong compose. `MaxRAMPercentage` không
-  kèm `mem_limit` sẽ đọc RAM cả host và có thể gây OOM cấp hệ thống (giết cả sshd).
-- **Web Audio**: `createMediaElementSource` làm câm nguồn cross-origin — chỉ bật cho
-  `blob:` cùng gốc.
-- **React (Compiler OFF)**: object truyền vào effect/hook phải `useMemo`. `usePlayer`
-  từng khoá playback vì `controls` bị dựng lại mỗi render.
-- **Workflow publish chỉ chạy trên `main`** và có `paths-ignore` cho `docs/**`, `*.md`.
-  PR không có phép kiểm nào — tự chạy test/lint trước khi merge.
+Cạm bẫy cụ thể theo loại file nằm ở `.agents/rules/`, **kích hoạt theo glob** nên chỉ
+nạp khi agent chạm đúng loại file — tiết kiệm ngân sách ngữ cảnh. Khi làm việc trong
+một vùng, đọc file tương ứng:
+
+- `frontend-react.md` (`frontend/**/*.tsx,ts`) — React Compiler TẮT nên memo tay;
+  `createMediaElementSource` câm nguồn cross-origin; `NEXT_PUBLIC_*` cố định lúc build;
+  mọi API qua proxy route cùng gốc.
+- `backend-java.md` (`backend/**/*.java`) — Jackson 3 (`tools.jackson`); chỉ nuốt 404
+  không nuốt cả 4xx; lỗi upstream mang mã ổn định; ghi-đĩa-trước-đổi-bộ-nhớ-sau; bí mật
+  không đọc ngược; Caffeine phải có `maximumSize`.
+- `docker-deploy.md` (`Dockerfile`, `docker-compose*.yml`, `deploy.sh`) — đừng build
+  trên VPS; `chown` trước `USER`; đổi `FROM` phải đọc lại cả file; `mem_limit`+`-Xmx`;
+  `deploy.sh` dọn trước khi giải nén.
+- `ci-workflows.md` (`.github/workflows/*.yml`) — publish chỉ trên `main`;
+  `paths-ignore` cho tài liệu; ảnh đa kiến trúc dựng theo digest rồi gộp, đừng gắn nhãn
+  ở bước build.
 
 ---
 
