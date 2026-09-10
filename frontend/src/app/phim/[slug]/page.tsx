@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 
 import { RelatedMovies } from "@/components/movie/RelatedMovies";
 import { ErrorState } from "@/components/ui/States";
+import { MovieCast } from "@/components/watch/MovieCast";
 import { MovieDescription } from "@/components/watch/MovieDescription";
 import { WatchClient } from "@/components/watch/WatchClient";
 import { api, ApiRequestError, errorMessage, isUnreachable, safe } from "@/lib/api";
@@ -59,9 +60,17 @@ export default async function MoviePage({ params, searchParams }: PageProps<"/ph
 
   const related = await loadRelated(movie, provider);
 
+  // Dien vien tu TheMovieDB (co anh + bam tim theo phim ho dong). Loi hoac thieu khoa
+  // TMDB khong duoc lam hong trang xem, nen di qua `safe`; thieu thi do ve ten tho.
+  const tmdb = movie.tmdb;
+  const tmdbCast = tmdb?.id
+    ? ((await safe(api.tmdbMovie(tmdb.id, tmdb.type === "tv" ? "tv" : "movie"), null))?.cast ?? [])
+    : [];
+
   return (
     <WatchClient
       movie={movie}
+      cast={<MovieCast cast={tmdbCast} actors={movie.actors} />}
       related={<RelatedMovies movies={related.movies} reason={related.reason} />}
     >
       <MovieDescription movie={movie} />

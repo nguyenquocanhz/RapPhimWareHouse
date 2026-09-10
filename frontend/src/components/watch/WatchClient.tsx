@@ -24,6 +24,8 @@ interface WatchClientProps {
   movie: MovieDetail;
   /** Khoi mo ta duoc render san o phia server. */
   children: ReactNode;
+  /** Danh sach dien vien, render san o phia server, dat ngay duoi thong tin phim. */
+  cast?: ReactNode;
   /** Danh sach phim lien quan, render san o phia server, dat duoi danh sach tap. */
   related?: ReactNode;
 }
@@ -42,7 +44,7 @@ const START: Position = { server: 0, episode: 0 };
  * Tap dang xem duoc ghi vao lich su ngay khi mo phim va moi lan doi tap,
  * nho vay lan sau quay lai se phat tiep dung cho.
  */
-export function WatchClient({ movie, children, related }: WatchClientProps) {
+export function WatchClient({ movie, children, cast, related }: WatchClientProps) {
   // Memo hoa de tham chieu on dinh, neu khong mang phu thuoc cua useEffect ben duoi
   // se doi moi lan render va ghi lich su lien tuc.
   const servers = useMemo(
@@ -175,6 +177,11 @@ export function WatchClient({ movie, children, related }: WatchClientProps) {
     setPicked({ server: serverIndex, episode: episodeIndex + 1 });
   }, [hasNext, serverIndex, episodeIndex]);
 
+  // Ten tap ke, hien tren man hinh het tap. Uu tien ten that, khong co thi danh so.
+  const nextEpisodeName = hasNext
+    ? (currentServer?.episodes[episodeIndex + 1]?.name ?? `Tập ${episodeIndex + 2}`)
+    : null;
+
   const hasPrevious = episodeCount > 1 && episodeIndex > 0;
   const goPrevious = useCallback(() => {
     if (episodeIndex <= 0) return;
@@ -227,6 +234,7 @@ export function WatchClient({ movie, children, related }: WatchClientProps) {
       onNext={hasNext ? goNext : undefined}
       onPrevious={hasPrevious ? goPrevious : undefined}
       episodeLabel={episodeLabel}
+      nextEpisodeName={nextEpisodeName}
       chapters={chapters}
       seekRequest={seekRequest}
     />
@@ -337,6 +345,8 @@ export function WatchClient({ movie, children, related }: WatchClientProps) {
             </ul>
           )}
 
+          {cast}
+
           {chapterList}
 
           {children}
@@ -435,6 +445,7 @@ function Stage({
   onNext,
   onPrevious,
   episodeLabel,
+  nextEpisodeName,
   chapters,
   seekRequest,
 }: {
@@ -454,6 +465,7 @@ function Stage({
   onNext?: () => void;
   onPrevious?: () => void;
   episodeLabel: string | null;
+  nextEpisodeName: string | null;
   chapters: Chapter[];
   seekRequest: { at: number; id: number } | null;
 }) {
@@ -496,6 +508,7 @@ function Stage({
           onNext={onNext}
           onPrevious={onPrevious}
           episodeLabel={episodeLabel}
+          nextEpisodeName={nextEpisodeName}
           onUnplayable={embed ? useSourcePlayer : undefined}
           poster={poster}
           introEnd={introEnd}
