@@ -24,6 +24,8 @@ interface WatchClientProps {
   movie: MovieDetail;
   /** Khoi mo ta duoc render san o phia server. */
   children: ReactNode;
+  /** Danh sach dien vien, render san o phia server, dat ngay duoi thong tin phim. */
+  cast?: ReactNode;
   /** Danh sach phim lien quan, render san o phia server, dat duoi danh sach tap. */
   related?: ReactNode;
 }
@@ -42,7 +44,7 @@ const START: Position = { server: 0, episode: 0 };
  * Tap dang xem duoc ghi vao lich su ngay khi mo phim va moi lan doi tap,
  * nho vay lan sau quay lai se phat tiep dung cho.
  */
-export function WatchClient({ movie, children, related }: WatchClientProps) {
+export function WatchClient({ movie, children, cast, related }: WatchClientProps) {
   // Memo hoa de tham chieu on dinh, neu khong mang phu thuoc cua useEffect ben duoi
   // se doi moi lan render va ghi lich su lien tuc.
   const servers = useMemo(
@@ -342,6 +344,8 @@ export function WatchClient({ movie, children, related }: WatchClientProps) {
               ))}
             </ul>
           )}
+
+          {cast}
 
           {chapterList}
 
