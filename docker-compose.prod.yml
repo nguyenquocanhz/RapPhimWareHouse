@@ -13,6 +13,8 @@ services:
     image: coredns/coredns:1.14.7
     container_name: rapphim-dns
     restart: unless-stopped
+    # CoreDNS do that ~11 MiB; 64m la thua thai an toan.
+    mem_limit: 64m
     command: ["-conf", "/Corefile"]
     volumes:
       - ./Corefile:/Corefile:ro
@@ -24,9 +26,22 @@ services:
     image: ghcr.io/nguyenquocanhz/rapphim-backend:${TAG:-latest}
     container_name: rapphim-backend
     restart: unless-stopped
+    # Chan RAM cua backend. Hai ly do:
+    #   1. Anh dat MaxRAMPercentage=75 - khong co mem_limit thi JVM doc RAM CA HOST
+    #      va tu cho phep heap qua lon so voi may. Ghim -Xmx ben duoi cho tran ro.
+    #   2. Khoanh vung su co: khong gioi han thi khi tien trinh phinh, OOM-killer cua
+    #      kernel chon nan nhan TOAN MAY - co the ban nham sshd, mat luon SSH. Co
+    #      mem_limit thi Docker chi giet rieng container nay, va no tu restart.
+    # Tri mac dinh hop VPS 2GB (muc "on ap"). Tren 1GB, dat trong .env:
+    #   BACKEND_MEM_LIMIT=640m  va  JAVA_OPTS=-Xmx384m
+    mem_limit: ${BACKEND_MEM_LIMIT:-1g}
     ports:
       - "${BACKEND_PORT:-7101}:8080"
     environment:
+      # Tran heap JVM. Do that: heap dung ~161MB, cache Caffeine co chan cung
+      # (maximumSize 500/1000/32/4) nen heap co tran that - 640m la du rong.
+      JAVA_OPTS: ${JAVA_OPTS:--Xmx640m}
+
       # Chi can khi co nguoi goi thang API tu trinh duyet. Ban than trang web khong
       # can, vi moi loi goi cua no deu di qua may chu Next.
       RAPPHIM_CORS_ORIGINS: ${PUBLIC_WEB_URL:-http://localhost:7100}
@@ -61,6 +76,8 @@ services:
     image: ghcr.io/nguyenquocanhz/rapphim-web:${TAG:-latest}
     container_name: rapphim-web
     restart: unless-stopped
+    # Next.js standalone: do that ~105 MiB. 512m du rong cho SSR luc dong nguoi.
+    mem_limit: ${WEB_MEM_LIMIT:-512m}
     ports:
       - "${WEB_PORT:-7100}:3000"
     environment:
