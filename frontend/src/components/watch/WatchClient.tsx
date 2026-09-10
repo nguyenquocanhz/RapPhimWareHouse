@@ -175,6 +175,11 @@ export function WatchClient({ movie, children, related }: WatchClientProps) {
     setPicked({ server: serverIndex, episode: episodeIndex + 1 });
   }, [hasNext, serverIndex, episodeIndex]);
 
+  // Ten tap ke, hien tren man hinh het tap. Uu tien ten that, khong co thi danh so.
+  const nextEpisodeName = hasNext
+    ? (currentServer?.episodes[episodeIndex + 1]?.name ?? `Tập ${episodeIndex + 2}`)
+    : null;
+
   const hasPrevious = episodeCount > 1 && episodeIndex > 0;
   const goPrevious = useCallback(() => {
     if (episodeIndex <= 0) return;
@@ -227,6 +232,7 @@ export function WatchClient({ movie, children, related }: WatchClientProps) {
       onNext={hasNext ? goNext : undefined}
       onPrevious={hasPrevious ? goPrevious : undefined}
       episodeLabel={episodeLabel}
+      nextEpisodeName={nextEpisodeName}
       chapters={chapters}
       seekRequest={seekRequest}
     />
@@ -435,6 +441,7 @@ function Stage({
   onNext,
   onPrevious,
   episodeLabel,
+  nextEpisodeName,
   chapters,
   seekRequest,
 }: {
@@ -454,6 +461,7 @@ function Stage({
   onNext?: () => void;
   onPrevious?: () => void;
   episodeLabel: string | null;
+  nextEpisodeName: string | null;
   chapters: Chapter[];
   seekRequest: { at: number; id: number } | null;
 }) {
@@ -496,6 +504,7 @@ function Stage({
           onNext={onNext}
           onPrevious={onPrevious}
           episodeLabel={episodeLabel}
+          nextEpisodeName={nextEpisodeName}
           onUnplayable={embed ? useSourcePlayer : undefined}
           poster={poster}
           introEnd={introEnd}
