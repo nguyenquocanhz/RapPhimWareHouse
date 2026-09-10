@@ -24,7 +24,8 @@ Không re-mux ở server: player phát từng đoạn audio theo mốc giờ và
 - **Phase 2 (xong):** **OCR hardsub → cue** — `POST /api/ocr`. Dùng ffmpeg lấy khung hình
   vùng phụ đề + **RapidOCR** (model PaddleOCR đóng gói ONNX, CPU, mạnh tiếng Trung), gộp
   khung trùng → cue kèm mốc giờ. Đã kiểm tra: clip hardsub tiếng Trung → 3 cue đúng chữ + giờ.
-- **Phase 3:** dịch zh/en → vi (offline hoặc online).
+- **Phase 3 (xong):** **dịch zh/en → vi** — `POST /api/translate`. Google (online, mặc định,
+  dịch thẳng zh→vi) + Argos (offline, tùy chọn). Giữ mốc giờ, lưu bản gốc ở `text_src`.
 - **Phase 4:** ghép chuỗi `POST /api/dub/from-video` (OCR → dịch → TTS) + tích hợp player
   (nút "Thuyết minh", chọn engine/giọng, phát đồng bộ + ducking).
 
@@ -39,6 +40,7 @@ Không re-mux ở server: player phát từng đoạn audio theo mốc giờ và
 | GET | `/api/dub/{jobId}/media/{name}` | Tệp audio của cue |
 | POST | `/api/ocr` | Body `{url, fps?, region_top?, region_height?, start?, duration?, min_score?}` → `{jobId}` |
 | GET | `/api/ocr/{jobId}` | Trạng thái + cue OCR `{start,end,text}` (chữ ngôn ngữ gốc) |
+| POST | `/api/translate` | Body `{cues:[{start,end,text}], target?, source?, engine?}` → cue kèm `text` (vi) + `text_src` |
 
 ## Chạy thử cục bộ
 

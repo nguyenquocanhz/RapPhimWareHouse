@@ -52,6 +52,13 @@ class OcrRequest(BaseModel):
     min_score: float = 0.6
 
 
+class TranslateRequest(BaseModel):
+    cues: list[CueIn]
+    target: str = "vi"
+    source: str = "auto"
+    engine: str = "google"  # google | argos
+
+
 @app.get("/health")
 def health() -> dict:
     return {"status": "ok", "service": "rapphim-dub"}
@@ -147,6 +154,23 @@ def get_ocr(jid: str) -> dict:
     if not job:
         raise HTTPException(status_code=404, detail="Khong thay job.")
     return job
+
+
+@app.post("/api/translate")
+async def translate_cues_ep(req: TranslateRequest) -> dict:
+    import translate as translate_mod
+
+    cues = [c.model_dump() for c in req.cues]
+    loop = asyncio.get_running_loop()
+    try:
+        # Dich chan (goi mang / model) nen chay trong executor de khong treo event loop.
+        result = await loop.run_in_executor(
+            None,
+            lambda: translate_mod.translate_cues(cues, req.target, req.source, req.engine),
+        )
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(status_code=502, detail=f"Dich that bai: {exc}")
+    return {"cues": result}
 
 
 async def _run_ocr(jid: str, req: OcrRequest) -> None:
