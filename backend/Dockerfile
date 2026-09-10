@@ -25,11 +25,6 @@ FROM bellsoft/liberica-openjre-alpine:17
 
 WORKDIR /app
 
-# curl (dung openssl): rieng nguon VSMOV nam sau Cloudflare, bo loc bot chan van tay TLS
-# cua Java (JSSE) nhung cho openssl qua. Backend goi vsmov qua curl, cac nguon khac giu
-# nguyen HTTP client cua Java.
-RUN apk add --no-cache curl
-
 # Chay bang tai khoan thuong, khong phai root.
 RUN addgroup -S rapphim && adduser -S rapphim -G rapphim
 

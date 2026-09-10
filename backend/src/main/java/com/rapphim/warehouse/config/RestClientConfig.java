@@ -1,11 +1,9 @@
 package com.rapphim.warehouse.config;
 
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.http.client.ClientHttpRequestFactoryBuilder;
 import org.springframework.boot.http.client.HttpClientSettings;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Primary;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.ClientHttpRequestFactory;
@@ -40,25 +38,10 @@ public class RestClientConfig {
 
     /** Factory dung chung, gioi han thoi gian cho de mot nguon cham khong lam treo API. */
     @Bean
-    @Primary
     public ClientHttpRequestFactory providerRequestFactory() {
         HttpClientSettings settings = HttpClientSettings.defaults()
                 .withTimeouts(properties.connectTimeout(), properties.readTimeout());
         return ClientHttpRequestFactoryBuilder.detect().build(settings);
-    }
-
-    /**
-     * Factory rieng cho VSMOV, goi qua {@code curl} (openssl) thay vi HTTP client cua Java.
-     *
-     * <p>VSMOV da chuyen site sang sau Cloudflare. Bo loc bot cua Cloudflare chan dung van
-     * tay TLS (JA3) cua thu vien TLS trong Java - bat ke TLS 1.2 hay 1.3 - trong khi cho
-     * openssl qua. Da do: openssl chay ca 1.2 lan 1.3 deu 200, Java bi chan ca hai. Nen
-     * goi vsmov qua curl (dung openssl); curl khai bao trung thuc la curl, khong gia dang
-     * trinh duyet.</p>
-     */
-    @Bean
-    public ClientHttpRequestFactory vsmovRequestFactory() {
-        return new CurlClientHttpRequestFactory(properties.connectTimeout(), properties.readTimeout());
     }
 
     @Bean
@@ -72,8 +55,7 @@ public class RestClientConfig {
     }
 
     @Bean
-    public RestClient vsmovRestClient(RestClient.Builder builder,
-                                      @Qualifier("vsmovRequestFactory") ClientHttpRequestFactory factory) {
+    public RestClient vsmovRestClient(RestClient.Builder builder, ClientHttpRequestFactory factory) {
         return baseClient(builder, factory, properties.vsmov().baseUrl());
     }
 
