@@ -3,7 +3,7 @@
  * Doi chieu voi Swagger tai http://localhost:8080/swagger-ui.html
  */
 
-export type ProviderCode = "kkphim" | "nguonc" | "homelab";
+export type ProviderCode = "kkphim" | "nguonc" | "vsmov" | "homelab";
 
 export interface ApiResponse<T> {
   success: boolean;

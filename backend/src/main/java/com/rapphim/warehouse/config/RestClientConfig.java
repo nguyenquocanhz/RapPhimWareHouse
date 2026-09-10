@@ -54,6 +54,11 @@ public class RestClientConfig {
         return baseClient(builder, factory, properties.nguonc().baseUrl());
     }
 
+    @Bean
+    public RestClient vsmovRestClient(RestClient.Builder builder, ClientHttpRequestFactory factory) {
+        return baseClient(builder, factory, properties.vsmov().baseUrl());
+    }
+
     /**
      * Client cho TheMovieDB.
      *

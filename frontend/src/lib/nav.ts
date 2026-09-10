@@ -15,6 +15,7 @@ const LIST_TYPES: Array<{ slug: string; label: string }> = [
 const PROVIDERS: Array<{ code: ProviderCode; label: string }> = [
   { code: "kkphim", label: "Nguồn KKPhim" },
   { code: "nguonc", label: "Nguồn NguonC" },
+  { code: "vsmov", label: "Nguồn VSMOV" },
   { code: "homelab", label: "Kho riêng" },
 ];
 

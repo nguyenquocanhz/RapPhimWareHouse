@@ -26,6 +26,10 @@ rapphim:
     nguonc:
       base-url: https://phim.nguonc.com
       cdn-image: ""
+    vsmov:
+      base-url: https://vsmov.com
+      # Anh cua VSMOV la URL tuyet doi nen khong can goc CDN.
+      cdn-image: ""
 
   # TheMovieDB: nguon metadata de sinh file NFO cho Kodi / Jellyfin / Emby.
   # Khong dat khoa truc tiep o day. Dat bien moi truong truoc khi chay:
