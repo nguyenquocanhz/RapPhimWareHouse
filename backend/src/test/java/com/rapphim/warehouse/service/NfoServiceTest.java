@@ -123,7 +123,7 @@ class NfoServiceTest {
                 "https://image.tmdb.org/t/p/w1280/backdrop.jpg",
                 List.of("Chính Kịch"), List.of("Hong Kong"), List.of("TVB"),
                 List.of("Lâm Sâm"),
-                List.of(new TmdbCast("Hera Chan", "Trình Chỉ Hân", 0, null)),
+                List.of(new TmdbCast("1136406", "Hera Chan", "Trình Chỉ Hân", 0, null)),
                 "tt37015024");
 
         String xml = service.build(movie("series", "<p>Nội dung của nguồn.</p>"), Optional.of(tmdb));

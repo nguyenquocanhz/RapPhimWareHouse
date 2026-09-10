@@ -9,6 +9,7 @@ import com.rapphim.warehouse.dto.Taxonomy;
 import com.rapphim.warehouse.dto.TmdbDetail;
 import com.rapphim.warehouse.dto.TmdbDiscoverItem;
 import com.rapphim.warehouse.dto.TmdbDiscoverQuery;
+import com.rapphim.warehouse.dto.TmdbPerson;
 import com.rapphim.warehouse.exception.ResourceNotFoundException;
 import com.rapphim.warehouse.service.MovieService;
 import com.rapphim.warehouse.service.NfoService;
@@ -206,6 +207,32 @@ public class TmdbController {
                         "TheMovieDB khong co ban ghi '" + type + "/" + id + "'"));
 
         return ResponseEntity.ok(ApiResponse.ok(detail));
+    }
+
+    @GetMapping("/tmdb/person/{id}")
+    @Operation(
+            summary = "Phim cua mot dien vien",
+            description = "Tra ve dien vien kem cac phim ho tung dong (metadata TMDB), sap theo "
+                    + "do pho bien. Moi phim dan toi trang kham pha cua no de tim ban xem duoc.")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "200", description = "Lay danh sach phim thanh cong"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "404", description = "TMDB khong co dien vien voi ma nay",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "503", description = "Chua cau hinh khoa TMDB",
+                    content = @Content(schema = @Schema(implementation = ApiError.class)))
+    })
+    public ResponseEntity<ApiResponse<TmdbPerson>> person(
+            @Parameter(description = "Ma dien vien tren TMDB", example = "1136406", required = true)
+            @PathVariable String id) {
+
+        TmdbPerson person = tmdbService.person(id)
+                .orElseThrow(() -> new ResourceNotFoundException("TMDB_NOT_FOUND",
+                        "TheMovieDB khong co dien vien voi ma '" + id + "'"));
+
+        return ResponseEntity.ok(ApiResponse.ok(person));
     }
 
     @GetMapping("/tmdb/genres")

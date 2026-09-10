@@ -128,6 +128,41 @@ public final class TmdbModels {
     public record Crew(Integer id, String name, String job, String department) {
     }
 
+    // ------------------------------------------------------------- dien vien
+
+    /** Ban ghi mot dien vien kem phim ho dong (append_to_response=combined_credits). */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record Person(
+            Integer id,
+            String name,
+            @JsonProperty("profile_path") String profilePath,
+            @JsonProperty("known_for_department") String knownForDepartment,
+            @JsonProperty("combined_credits") CombinedCredits combinedCredits) {
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record CombinedCredits(List<CreditItem> cast) {
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record CreditItem(
+            Integer id,
+            @JsonProperty("media_type") String mediaType,
+            String title,
+            String name,
+            @JsonProperty("original_title") String originalTitle,
+            @JsonProperty("original_name") String originalName,
+            String overview,
+            @JsonProperty("poster_path") String posterPath,
+            @JsonProperty("backdrop_path") String backdropPath,
+            @JsonProperty("release_date") String releaseDate,
+            @JsonProperty("first_air_date") String firstAirDate,
+            @JsonProperty("vote_average") Double voteAverage,
+            @JsonProperty("vote_count") Integer voteCount,
+            Double popularity,
+            @JsonProperty("genre_ids") List<Integer> genreIds) {
+    }
+
     /** Response cua {@code /discover/movie} va cac endpoint danh sach khac. */
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record Page(

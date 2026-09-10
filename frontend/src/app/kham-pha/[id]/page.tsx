@@ -115,22 +115,39 @@ export default async function TmdbMoviePage({ params, searchParams }: PageProps<
         {movie.cast.length > 0 && (
           <section className="mt-10">
             <h2 className="mb-4 text-lg font-semibold text-fg">Diễn viên</h2>
-            <ul className="no-scrollbar -mx-4 flex gap-4 overflow-x-auto px-4 pb-1 sm:-mx-6 sm:px-6">
-              {movie.cast.map((member, index) => (
-                <li key={`${member.name}-${index}`} className="w-28 shrink-0">
-                  <div className="relative aspect-[2/3] overflow-hidden rounded-xl bg-surface">
-                    <Thumb src={member.profileUrl} alt={member.name ?? ""} sizes="112px" />
-                  </div>
-                  <p className="mt-2 line-clamp-2-title text-xs font-medium leading-4 text-fg">
-                    {member.name}
-                  </p>
-                  {member.character && (
-                    <p className="mt-0.5 line-clamp-2-title text-xs leading-4 text-muted">
-                      {member.character}
+            <ul className="grid grid-cols-3 gap-x-3 gap-y-6 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8">
+              {movie.cast.map((member, index) => {
+                const card = (
+                  <>
+                    <div className="relative aspect-[2/3] overflow-hidden rounded-xl bg-surface ring-brand transition group-hover:ring-2">
+                      <Thumb src={member.profileUrl} alt={member.name ?? ""} sizes="112px" />
+                    </div>
+                    <p className="mt-2 line-clamp-2-title text-xs font-medium leading-4 text-fg group-hover:text-brand">
+                      {member.name}
                     </p>
-                  )}
-                </li>
-              ))}
+                    {member.character && (
+                      <p className="mt-0.5 line-clamp-2-title text-xs leading-4 text-muted">
+                        {member.character}
+                      </p>
+                    )}
+                  </>
+                );
+                return (
+                  <li key={`${member.name}-${index}`}>
+                    {member.id ? (
+                      <Link
+                        href={`/kham-pha/dien-vien/${member.id}`}
+                        className="group block"
+                        title={`Phim ${member.name} đã đóng`}
+                      >
+                        {card}
+                      </Link>
+                    ) : (
+                      card
+                    )}
+                  </li>
+                );
+              })}
             </ul>
           </section>
         )}
