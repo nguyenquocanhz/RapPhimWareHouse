@@ -1,0 +1,8 @@
+fastapi>=0.115,<0.116
+uvicorn[standard]>=0.30,<0.35
+pydantic>=2.9,<3
+edge-tts>=6.1,<8
+# OCR phu de chay: model PaddleOCR dong goi ONNX + onnxruntime (CPU), keo theo opencv/numpy.
+rapidocr_onnxruntime>=1.3,<2
+# Dich online (Google) - khong khoa. Offline (argos) cai rieng khi can.
+deep-translator>=1.11,<2

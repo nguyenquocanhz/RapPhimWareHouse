@@ -371,6 +371,15 @@ export function NextEpisodeIcon(props: IconProps) {
   );
 }
 
+/** Thuyet minh: mic (giong doc long tren phim). */
+export function MicIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M12 15c1.66 0 3-1.34 3-3V6c0-1.66-1.34-3-3-3S9 4.34 9 6v6c0 1.66 1.34 3 3 3zm5-3c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-2.08c3.39-.49 6-3.39 6-6.92h-2z" />
+    </Icon>
+  );
+}
+
 /** Phat lai: mui ten vong tron nguoc. */
 export function ReplayIcon(props: IconProps) {
   return (

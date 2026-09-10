@@ -67,7 +67,7 @@ say "Gửi mã nguồn"
 # gap that: doi ten mot trang roi deploy, trang cu van con tren may dich va van build
 # vao anh. Chi xoa dung cac thu muc chua ma nguon - .env cua nguoi dung nam o goc va
 # duoc giu nguyen.
-ssh_run "cd ~/$REMOTE_DIR 2>/dev/null && rm -rf backend frontend docs || true"
+ssh_run "cd ~/$REMOTE_DIR 2>/dev/null && rm -rf backend frontend docs dub || true"
 
 tar czf - -C "$HERE" \
   --exclude=node_modules \
@@ -76,7 +76,10 @@ tar czf - -C "$HERE" \
   --exclude=.git \
   --exclude='*.log' \
   --exclude=.env \
-  backend frontend docs README.md docker-compose.yml docker-compose.prod.yml Corefile .env.example \
+  --exclude=__pycache__ \
+  --exclude=ttsenv \
+  --exclude=_media \
+  backend frontend docs dub README.md docker-compose.yml docker-compose.prod.yml Corefile .env.example \
   | ssh_run "mkdir -p ~/$REMOTE_DIR && tar xzf - -C ~/$REMOTE_DIR"
 
 # Lan dau chay thi chua co .env, tao san mot ban tu mau de compose khong hong.

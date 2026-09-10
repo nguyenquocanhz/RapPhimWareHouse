@@ -76,13 +76,38 @@ services:
       # Dia chi duy nhat ma frontend can. Trinh duyet khong dung toi no: moi loi goi
       # deu di qua route handler cua chinh ung dung Next.
       API_INTERNAL_URL: http://backend:8080
+      # Dich vu thuyet minh (OCR + dich + TTS). Cung di qua route handler cua Next.
+      DUB_INTERNAL_URL: http://dub:8080
     depends_on:
       - backend
     networks:
       - rapphim
 
+  # Thuyet minh: OCR phu de chay -> dich -> TTS. ML nang (PaddleOCR ONNX + ffmpeg).
+  dub:
+    build:
+      context: ./dub
+    image: rapphim-dub:latest
+    container_name: rapphim-dub
+    restart: unless-stopped
+    # Chan RAM: OCR nap model kha ton, khong gioi han thi khi chay job de keo sap ca may.
+    mem_limit: ${DUB_MEM_LIMIT:-1500m}
+    environment:
+      DUB_MEDIA_DIR: /data/dub
+    volumes:
+      # Giu audio da sinh qua lan dung lai container.
+      - rapphim-dub-media:/data/dub
+    # Dung bo phan giai rieng de doc duoc ten mien nguon phim (OCR keo m3u8 tu CDN nguon).
+    dns:
+      - 172.29.0.53
+    depends_on:
+      - dns
+    networks:
+      - rapphim
+
 volumes:
   rapphim-data:
+  rapphim-dub-media:
 
 networks:
   rapphim:
