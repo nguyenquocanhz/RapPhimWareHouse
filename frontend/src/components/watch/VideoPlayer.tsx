@@ -21,6 +21,7 @@ import {
   PlayIcon,
   RotateScreenIcon,
   PreviousEpisodeIcon,
+  ReplayIcon,
   SeekBackIcon,
   SeekForwardIcon,
   SettingsIcon,
@@ -81,6 +82,8 @@ interface VideoPlayerProps {
    * Hien ngay trong khung phat de khong phai keo xuong danh sach tap moi biet.
    */
   episodeLabel?: string | null;
+  /** Ten tap ke tiep, hien tren man hinh het tap de biet sap xem gi. */
+  nextEpisodeName?: string | null;
 }
 
 const RATES = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2];
@@ -120,6 +123,9 @@ const VOLUME_KEY = "rapphim.volume";
 
 /** Buoc tua nhanh, ap dung cho moi phim chu khong rieng bo nao. */
 const SEEK_STEP_KEY = "rapphim.seekstep";
+
+/** Co tu chuyen sang tap ke khi het tap hay khong. Ap dung cho moi phim. */
+const AUTOPLAY_KEY = "rapphim.autoplay";
 
 type Panel = "root" | "rate" | "quality" | "intro" | "seek" | "subtitle" | "audio";
 
@@ -164,6 +170,7 @@ export function VideoPlayer({
   sourceKind = "hls",
   subtitles,
   episodeLabel,
+  nextEpisodeName,
 }: VideoPlayerProps) {
   const { videoRef, state, controls } = usePlayer(src, sourceKind);
   const {
@@ -200,6 +207,13 @@ export function VideoPlayer({
 
   const [seekStep, setSeekStep] = useLocalStorage<number>(SEEK_STEP_KEY, 10, (value) =>
     typeof value === "number" && SEEK_STEPS.includes(value) ? value : null,
+  );
+
+  // Tu chuyen tap khi het, mac dinh bat. Nho qua localStorage cho moi phim.
+  const [autoplayNext, setAutoplayNext] = useLocalStorage<boolean>(
+    AUTOPLAY_KEY,
+    true,
+    (value) => (typeof value === "boolean" ? value : null),
   );
 
   const audio = useAudioChain(videoRef, src);
@@ -382,7 +396,17 @@ export function VideoPlayer({
    */
   const [autoNextOff, setAutoNextOff] = useState<string | null>(null);
 
-  const countingDown = state.ended && Boolean(onNext) && autoNextOff !== src;
+  // Chi dem nguoc khi: het tap, con tap ke, dang bat tu chuyen tap, va chua bam Huy.
+  const countingDown =
+    state.ended && Boolean(onNext) && autoplayNext && autoNextOff !== src;
+
+  /** Phat lai tu dau, dung o man hinh het tap. */
+  const replay = useCallback(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    video.currentTime = 0;
+    video.play().catch(() => undefined);
+  }, [videoRef]);
 
   // Da doc duoc thoi luong nghia la luong chay duoc; tu day tro di khong duoc
   // nhuong lai cho iframe nua, du sau do co loi tam thoi. Truoc khi do, neu cho
@@ -899,11 +923,16 @@ export function VideoPlayer({
         </button>
       )}
 
-      {/* Het tap: dem nguoc sang tap ke, van cho huy hoac di ngay */}
-      {countingDown && onNext && (
-        <AutoNextCard
+      {/* Man hinh het tap: dem nguoc sang tap ke (neu bat), hoac cho phat lai / xem tiep */}
+      {state.ended && !state.error && !state.waiting && (
+        <EndScreen
+          key={countingDown ? "countdown" : "ended"}
+          hasNext={Boolean(onNext)}
+          countdown={countingDown}
           seconds={AUTO_NEXT_SECONDS}
-          onDone={onNext}
+          nextName={nextEpisodeName}
+          onNext={onNext}
+          onReplay={replay}
           onCancel={() => setAutoNextOff(src)}
         />
       )}
@@ -1115,6 +1144,8 @@ export function VideoPlayer({
                 setSeekStep(value);
                 setPanel("root");
               }}
+              autoplayNext={autoplayNext}
+              onToggleAutoplay={() => setAutoplayNext((current) => !current)}
               canEditIntro={Boolean(onSetIntro) && state.duration > 0}
               onSetIntroHere={() => {
                 onSetIntro?.(Math.round(state.currentTime));
@@ -1189,63 +1220,120 @@ export function VideoPlayer({
  * neu dem trong chinh trinh phat thi phai dat lai bo dem tu trong effect, dieu ma React
  * khuyen khong nen lam. Thoat khoi man hinh nay la component bi go, bo dem tu mat.</p>
  */
-function AutoNextCard({
+/**
+ * Man hinh hien khi het tap.
+ *
+ * <p>Hai che do trong cung mot component (dat gia tri dau ngay trong {@code useState},
+ * go khoi man la bo dem tu mat):</p>
+ * <ul>
+ *   <li><b>Dem nguoc</b> ({@code countdown} = true): con tap ke va dang bat tu chuyen tap.
+ *       Hien ten tap ke + vong dem nguoc, het gio thi tu sang tap; kem nut Huy.</li>
+ *   <li><b>Thu cong</b>: tat tu chuyen, da bam Huy, hoac la tap cuoi. Cho Phat lai va
+ *       (neu con) Xem tap tiep theo.</li>
+ * </ul>
+ */
+function EndScreen({
+  hasNext,
+  countdown,
   seconds,
-  onDone,
+  nextName,
+  onNext,
+  onReplay,
   onCancel,
 }: {
+  hasNext: boolean;
+  countdown: boolean;
   seconds: number;
-  onDone: () => void;
+  nextName?: string | null;
+  onNext?: () => void;
+  onReplay: () => void;
   onCancel: () => void;
 }) {
+  // Bo dem dat lai moi lan component gan lai (xem `key` o cho goi): doi giua che do
+  // dem nguoc / thu cong la gan lai, nen khong can effect dat lai (tranh set-state-in-effect).
   const [left, setLeft] = useState(seconds);
 
   useEffect(() => {
+    if (!countdown) return;
     const timer = window.setInterval(() => setLeft((current) => Math.max(current - 1, 0)), 1000);
     return () => window.clearInterval(timer);
-  }, []);
+  }, [countdown]);
 
-  // Dem het thi moi sang tap, lam o day chu khong lam trong ham cap nhat state:
+  // Dem het thi moi sang tap, lam o day chu khong trong ham cap nhat state:
   // React co the goi ham cap nhat hai lan, sang tap hai lan la nhay mat mot tap.
   useEffect(() => {
-    if (left > 0) return;
-    onDone();
-  }, [left, onDone]);
+    if (!countdown || left > 0) return;
+    onNext?.();
+  }, [countdown, left, onNext]);
 
   const ratio = seconds > 0 ? left / seconds : 0;
 
   return (
-    <div className="absolute inset-0 grid place-items-center bg-black/70">
-      <div className="flex flex-col items-center gap-4 px-6 text-center">
-        <p className="text-sm text-white/80">Tập tiếp theo sau {left} giây</p>
+    <div className="absolute inset-0 grid place-items-center bg-black/80 px-6">
+      <div className="flex w-full max-w-md flex-col items-center gap-4 text-center">
+        {countdown ? (
+          <>
+            <p className="text-xs font-medium uppercase tracking-wider text-white/60">
+              Tập tiếp theo sau {left} giây
+            </p>
+            {nextName && (
+              <p className="line-clamp-2-title text-base font-semibold leading-6 text-white">
+                {nextName}
+              </p>
+            )}
 
-        <button
-          type="button"
-          onClick={onDone}
-          aria-label="Xem tập tiếp theo ngay"
-          className="relative grid size-16 place-items-center rounded-full bg-black/60 text-white transition hover:bg-brand"
-        >
-          {/* Vong dem nguoc ve bang conic-gradient, khong can them thu vien nao */}
-          <span
-            aria-hidden="true"
-            className="absolute inset-0 rounded-full"
-            style={{
-              background: `conic-gradient(var(--brand, #f00) ${(1 - ratio) * 360}deg, rgba(255,255,255,.25) 0deg)`,
-              // Khoet ruot de chi con lai mot vong mong
-              mask: "radial-gradient(circle, transparent 60%, #000 61%)",
-              WebkitMask: "radial-gradient(circle, transparent 60%, #000 61%)",
-            }}
-          />
-          <PlayIcon width={28} height={28} />
-        </button>
+            <button
+              type="button"
+              onClick={onNext}
+              aria-label="Xem tập tiếp theo ngay"
+              className="relative grid size-16 place-items-center rounded-full bg-black/60 text-white transition hover:scale-105 hover:bg-brand"
+            >
+              {/* Vong dem nguoc ve bang conic-gradient, khong can them thu vien nao */}
+              <span
+                aria-hidden="true"
+                className="absolute inset-0 rounded-full"
+                style={{
+                  background: `conic-gradient(var(--brand, #f00) ${(1 - ratio) * 360}deg, rgba(255,255,255,.25) 0deg)`,
+                  mask: "radial-gradient(circle, transparent 60%, #000 61%)",
+                  WebkitMask: "radial-gradient(circle, transparent 60%, #000 61%)",
+                }}
+              />
+              <NextEpisodeIcon width={26} height={26} />
+            </button>
 
-        <button
-          type="button"
-          onClick={onCancel}
-          className="rounded-full bg-white/15 px-4 py-1.5 text-sm font-medium text-white transition hover:bg-white/25"
-        >
-          Huỷ
-        </button>
+            <button
+              type="button"
+              onClick={onCancel}
+              className="rounded-full bg-white/15 px-4 py-1.5 text-sm font-medium text-white transition hover:bg-white/25"
+            >
+              Huỷ
+            </button>
+          </>
+        ) : (
+          <>
+            <p className="text-sm text-white/80">Đã xem hết tập này</p>
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              <button
+                type="button"
+                onClick={onReplay}
+                className="flex h-10 items-center gap-2 rounded-full bg-white/15 px-5 text-sm font-medium text-white transition hover:bg-white/25"
+              >
+                <ReplayIcon width={18} height={18} />
+                Phát lại
+              </button>
+              {hasNext && onNext && (
+                <button
+                  type="button"
+                  onClick={onNext}
+                  className="flex h-10 items-center gap-2 rounded-full bg-brand px-5 text-sm font-medium text-brand-fg transition hover:opacity-90"
+                >
+                  <NextEpisodeIcon width={18} height={18} />
+                  Tập tiếp theo
+                </button>
+              )}
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
@@ -1332,6 +1420,8 @@ function SettingsMenu({
   onSubtitle,
   seekStep,
   onSeekStep,
+  autoplayNext,
+  onToggleAutoplay,
   canEditIntro,
   onSetIntroHere,
   onClearIntro,
@@ -1353,6 +1443,8 @@ function SettingsMenu({
   onSubtitle: (index: number) => void;
   seekStep: number;
   onSeekStep: (seconds: number) => void;
+  autoplayNext: boolean;
+  onToggleAutoplay: () => void;
   canEditIntro: boolean;
   onSetIntroHere: () => void;
   onClearIntro: () => void;
@@ -1388,6 +1480,7 @@ function SettingsMenu({
           >
             {panel === "root" && (
               <>
+                <MenuToggle label="Tự động chuyển tập" on={autoplayNext} onClick={onToggleAutoplay} />
                 <MenuRow onClick={() => onPanel("rate")} value={rate === 1 ? "Chuẩn" : `${rate}x`}>
                   Tốc độ phát
                 </MenuRow>
@@ -1612,6 +1705,32 @@ function AudioPanel({ audio, onBack }: { audio: AudioChain; onBack: () => void }
         </div>
       )}
     </>
+  );
+}
+
+/** Hang bat/tat trong menu, cong tac kieu iOS - khong mo bang con nhu MenuRow. */
+function MenuToggle({ label, on, onClick }: { label: string; on: boolean; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={on}
+      onClick={onClick}
+      className="flex w-full items-center gap-3 px-4 py-2.5 text-left transition hover:bg-white/10"
+    >
+      <span className="flex-1">{label}</span>
+      <span
+        className={`relative h-5 w-9 shrink-0 rounded-full transition-colors ${
+          on ? "bg-brand" : "bg-white/25"
+        }`}
+      >
+        <span
+          className={`absolute top-0.5 size-4 rounded-full bg-white transition-all ${
+            on ? "left-[18px]" : "left-0.5"
+          }`}
+        />
+      </span>
+    </button>
   );
 }
 
