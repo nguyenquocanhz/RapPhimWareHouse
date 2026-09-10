@@ -38,8 +38,10 @@ public final class VsmovModels {
             String name,
             String slug,
             @JsonProperty("origin_name") String originName,
-            @JsonProperty("poster_url") String posterUrl,
-            @JsonProperty("thumb_url") String thumbUrl,
+            // VSMOV tra {} (object rong) cho anh thieu thay vi chuoi/null - de Object roi
+            // loc trong provider, neu de String se vo khi gap {}.
+            @JsonProperty("poster_url") Object posterUrl,
+            @JsonProperty("thumb_url") Object thumbUrl,
             Integer year,
             TmdbRaw tmdb,
             ImdbRaw imdb,
@@ -60,8 +62,8 @@ public final class VsmovModels {
             String slug,
             @JsonProperty("origin_name") String originName,
             String content,
-            @JsonProperty("poster_url") String posterUrl,
-            @JsonProperty("thumb_url") String thumbUrl,
+            @JsonProperty("poster_url") Object posterUrl,
+            @JsonProperty("thumb_url") Object thumbUrl,
             @JsonProperty("trailer_url") String trailerUrl,
             Integer year,
             String type,

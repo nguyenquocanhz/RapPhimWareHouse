@@ -101,6 +101,12 @@ const UNPLAYABLE_TIMEOUT_MS = 7000;
 const AUTO_NEXT_SECONDS = 5;
 
 /**
+ * Che do thuyet minh dang TAT (dich vu ML nang qua suc homelab). Nut chi hien khi dat
+ * bien NEXT_PUBLIC_DUB_ENABLED=true luc build va co chay dich vu dub.
+ */
+const DUB_ENABLED = process.env.NEXT_PUBLIC_DUB_ENABLED === "true";
+
+/**
  * {@code ScreenOrientation.lock} chua co trong lib DOM cua TypeScript ban nay, trong
  * khi moi trinh duyet di dong deu co. Khai bao lai dung phan can dung thay vi ha muc
  * kiem tra kieu cua ca tep.
@@ -1152,6 +1158,7 @@ export function VideoPlayer({
               </ControlButton>
             )}
 
+            {DUB_ENABLED && (
             <ControlButton
               label={
                 dub.status === "working"
@@ -1181,6 +1188,7 @@ export function VideoPlayer({
                 )}
               </span>
             </ControlButton>
+            )}
 
             <SettingsMenu
               open={panel !== null}
