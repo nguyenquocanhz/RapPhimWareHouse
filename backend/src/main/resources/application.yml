@@ -40,6 +40,11 @@ rapphim:
     access-token: ${TMDB_ACCESS_TOKEN:}
     api-key: ${TMDB_API_KEY:}
 
+  # AniList: nguon metadata anime (GraphQL, hop phap, khong phat video).
+  # Khong can khoa - de trong la chay. Chi doi base-url neu can proxy.
+  anilist:
+    base-url: https://graphql.anilist.co
+
   # Kho phim rieng tren homelab (ZCloud - FastAPI + S3).
   # Khong dat khoa truc tiep o day. Dat bien moi truong truoc khi chay:
   #   ZCLOUD_API_KEY   khoa goi thang, gui qua header x-api-key  (uu tien)

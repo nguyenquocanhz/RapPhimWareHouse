@@ -31,3 +31,6 @@ npm-debug.log*
 # Bo dung ebook trong docs/ebook
 __pycache__/
 *.pyc
+
+# Thu muc du lieu runtime (audit/settings/custom-sources) - sinh khi chay, khong commit
+data/
