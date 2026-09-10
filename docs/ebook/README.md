@@ -70,3 +70,9 @@ lượt — lượt đầu thu thập vị trí, lượt sau mới điền đư�
 `Tu-Commit-Den-Container.pdf` được commit sẵn để đọc ngay mà không cần cài
 Python. Không có quy trình tự động nào dựng lại nó, nên **sửa nội dung thì nhớ
 chạy `dung.py` và commit cả tệp PDF**, nếu không hai thứ sẽ lệch nhau.
+
+## Coda
+
+[`van-khan-deploy.md`](van-khan-deploy.md) — hai bài văn khấn (trước khi deploy và
+tạ sau khi xong), nhại thể văn khấn cổ. Mỗi câu là một sự cố có thật trong sổ tay.
+Đọc cho vui.
