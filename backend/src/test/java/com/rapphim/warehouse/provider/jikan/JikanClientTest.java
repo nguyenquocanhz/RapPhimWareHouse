@@ -8,6 +8,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.test.web.client.ExpectedCount;
 import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.RestClient;
 
@@ -105,15 +106,53 @@ class JikanClientTest {
     }
 
     @Test
-    @DisplayName("504 tu Jikan: bao UpstreamException, khong nuot")
-    void serverErrorRaises() {
+    @DisplayName("504 lien tuc: thu lai vai lan roi bao UpstreamException, khong nuot")
+    void serverErrorRetriesThenRaises() {
         MockRestServiceServer[] server = new MockRestServiceServer[1];
         JikanClient client = clientWith(server);
 
-        server[0].expect(method(org.springframework.http.HttpMethod.GET))
+        // 5xx duoc thu lai NETWORK_ATTEMPTS (3) lan; het lan thi bao loi.
+        server[0].expect(ExpectedCount.times(3), method(org.springframework.http.HttpMethod.GET))
                 .andRespond(withStatus(HttpStatus.GATEWAY_TIMEOUT));
 
         assertThatThrownBy(() -> client.trending(1, 25))
                 .isInstanceOf(UpstreamException.class);
+        server[0].verify();
+    }
+
+    @Test
+    @DisplayName("504 roi 200: thu lai va hoi phuc, tra ve du lieu")
+    void serverErrorThenRecovers() {
+        MockRestServiceServer[] server = new MockRestServiceServer[1];
+        JikanClient client = clientWith(server);
+
+        String json = """
+                {"pagination":{"items":{"total":10}},
+                 "data":[{"mal_id":1,"title":"X","score":7.0,
+                   "images":{"jpg":{"large_image_url":"https://img/x.jpg"}}}]}
+                """;
+        server[0].expect(method(org.springframework.http.HttpMethod.GET))
+                .andRespond(withStatus(HttpStatus.GATEWAY_TIMEOUT));
+        server[0].expect(method(org.springframework.http.HttpMethod.GET))
+                .andRespond(withSuccess(json, MediaType.APPLICATION_JSON));
+
+        assertThat(client.trending(1, 25).items()).hasSize(1);
+        server[0].verify();
+    }
+
+    @Test
+    @DisplayName("429 KHONG thu lai (lam lai chi cang bi gioi han)")
+    void rateLimitDoesNotRetry() {
+        MockRestServiceServer[] server = new MockRestServiceServer[1];
+        JikanClient client = clientWith(server);
+
+        // Chi khai bao MOT lan: neu client thu lai, se co request thu hai khong khop.
+        server[0].expect(ExpectedCount.once(), method(org.springframework.http.HttpMethod.GET))
+                .andRespond(withStatus(HttpStatus.TOO_MANY_REQUESTS));
+
+        assertThatThrownBy(() -> client.trending(1, 25))
+                .isInstanceOf(UpstreamException.class)
+                .hasMessageContaining("giới hạn");
+        server[0].verify();
     }
 }
