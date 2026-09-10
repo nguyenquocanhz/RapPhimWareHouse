@@ -9,10 +9,7 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.ClientHttpRequestFactory;
-import org.springframework.http.client.JdkClientHttpRequestFactory;
 import org.springframework.web.client.RestClient;
-
-import java.net.http.HttpClient;
 
 /**
  * Tao san hai {@link RestClient} rieng cho tung nguon phim, kem timeout va header mac dinh.
@@ -51,22 +48,17 @@ public class RestClientConfig {
     }
 
     /**
-     * Factory rieng cho VSMOV, ep giao thuc HTTP/1.1.
+     * Factory rieng cho VSMOV, goi qua {@code curl} (openssl) thay vi HTTP client cua Java.
      *
-     * <p>VSMOV da chuyen site sang sau Cloudflare. Bo loc bot cua Cloudflare chan ket noi
-     * HTTP/2 cua client Java (curl/python van vao duoc). Ep dung HTTP/1.1 bang client JDK
-     * rieng thuong qua duoc bo loc theo giao thuc - va van la cau hinh chuan, khong gia
-     * dang trinh duyet.</p>
+     * <p>VSMOV da chuyen site sang sau Cloudflare. Bo loc bot cua Cloudflare chan dung van
+     * tay TLS (JA3) cua thu vien TLS trong Java - bat ke TLS 1.2 hay 1.3 - trong khi cho
+     * openssl qua. Da do: openssl chay ca 1.2 lan 1.3 deu 200, Java bi chan ca hai. Nen
+     * goi vsmov qua curl (dung openssl); curl khai bao trung thuc la curl, khong gia dang
+     * trinh duyet.</p>
      */
     @Bean
     public ClientHttpRequestFactory vsmovRequestFactory() {
-        HttpClient client = HttpClient.newBuilder()
-                .version(HttpClient.Version.HTTP_1_1)
-                .connectTimeout(properties.connectTimeout())
-                .build();
-        JdkClientHttpRequestFactory factory = new JdkClientHttpRequestFactory(client);
-        factory.setReadTimeout(properties.readTimeout());
-        return factory;
+        return new CurlClientHttpRequestFactory(properties.connectTimeout(), properties.readTimeout());
     }
 
     @Bean
