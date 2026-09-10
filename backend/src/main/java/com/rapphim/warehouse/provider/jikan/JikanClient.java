@@ -130,11 +130,15 @@ public class JikanClient implements AnimeMetadataProvider {
     }
 
     /**
-     * Goi GET, thu lai khi loi MANG. Loi HTTP co ma khong thu lai: 404 tra {@code null}
-     * (khong co ban ghi), con lai bao thanh {@link UpstreamException} doc duoc.
+     * Goi GET, thu lai khi loi MANG hoac 5xx. 404 tra {@code null} (khong co ban ghi).
+     *
+     * <p>Rieng Jikan thu lai ca 5xx, khac TmdbClient/AniListClient: cac endpoint nang
+     * cua no ({@code /top/anime}, tim kiem) hay tra {@code 504 Gateway Timeout} tam thoi,
+     * lam lai thuong an. Nhung 4xx thi KHONG lam lai - nhat la {@code 429}: lam lai chi
+     * cang bi gioi han, con 4xx khac lam lai cung the.</p>
      */
     private <T> T get(Function<UriBuilder, URI> uri, Class<T> type) {
-        RestClientException lastNetwork = null;
+        UpstreamException last = null;
         for (int attempt = 1; attempt <= NETWORK_ATTEMPTS; attempt++) {
             try {
                 return client.get().uri(uri::apply).retrieve().body(type);
@@ -142,17 +146,25 @@ public class JikanClient implements AnimeMetadataProvider {
                 if (ex.getStatusCode().value() == 404) {
                     return null;
                 }
-                log.warn("Jikan tu choi: {}", ex.getStatusCode());
-                throw new UpstreamException(PROVIDER_CODE, explain(ex), ex);
+                UpstreamException wrapped = new UpstreamException(PROVIDER_CODE, explain(ex), ex);
+                if (!ex.getStatusCode().is5xxServerError()) {
+                    log.warn("Jikan tu choi: {}", ex.getStatusCode());
+                    throw wrapped;
+                }
+                last = wrapped;
+                log.debug("Jikan 5xx lan {}/{}: {}", attempt, NETWORK_ATTEMPTS, ex.getStatusCode());
+                if (attempt == NETWORK_ATTEMPTS || !pause(attempt)) {
+                    throw wrapped;
+                }
             } catch (RestClientException ex) {
-                lastNetwork = ex;
+                last = UpstreamException.network(PROVIDER_CODE, "Jikan", ex);
                 log.debug("Jikan loi mang lan {}/{}: {}", attempt, NETWORK_ATTEMPTS, ex.getMessage());
-                if (!pause(attempt)) {
-                    break;
+                if (attempt == NETWORK_ATTEMPTS || !pause(attempt)) {
+                    throw last;
                 }
             }
         }
-        throw UpstreamException.network(PROVIDER_CODE, "Jikan", lastNetwork);
+        throw last;
     }
 
     private boolean pause(int attempt) {
