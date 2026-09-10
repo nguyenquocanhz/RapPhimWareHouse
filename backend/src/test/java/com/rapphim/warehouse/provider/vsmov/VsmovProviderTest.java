@@ -53,6 +53,30 @@ class VsmovProviderTest {
     }
 
     @Test
+    @DisplayName("Ảnh trả về {} (object rỗng): map thành null, không vỡ")
+    void toleratesEmptyObjectPoster() {
+        MockRestServiceServer[] server = new MockRestServiceServer[1];
+        VsmovProvider provider = providerWith(server);
+
+        // VSMOV doi khi tra poster_url la {} (object rong) cho anh thieu thay vi chuoi.
+        String json = """
+                {"status":true,"items":[
+                  {"_id":1,"name":"A","slug":"a","poster_url":{},
+                   "thumb_url":"https://vsmov.com/storage/images/t.jpg","year":2026}],
+                 "pagination":{"totalItems":1,"totalItemsPerPage":24,"currentPage":1,"totalPages":1}}
+                """;
+        server[0].expect(requestTo(org.hamcrest.Matchers.startsWith(
+                        "https://vsmov.com/api/danh-sach/phim-moi-cap-nhat")))
+                .andRespond(withSuccess(json, MediaType.APPLICATION_JSON));
+
+        PageResponse<MovieSummary> page = provider.latest(MovieQuery.of(1, 24));
+
+        assertThat(page.items()).hasSize(1);
+        assertThat(page.items().get(0).posterUrl()).isNull();
+        assertThat(page.items().get(0).thumbUrl()).isEqualTo("https://vsmov.com/storage/images/t.jpg");
+    }
+
+    @Test
     @DisplayName("latest: items o goc, _id so -> chuoi, vote_average chuoi -> Double, anh giu tuyet doi")
     void latestMapsRootItems() {
         MockRestServiceServer[] server = new MockRestServiceServer[1];

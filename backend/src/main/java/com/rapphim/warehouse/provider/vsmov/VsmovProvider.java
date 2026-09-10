@@ -178,8 +178,8 @@ public class VsmovProvider implements MovieProvider {
                 item.slug(),
                 item.name(),
                 item.originName(),
-                ProviderSupport.absoluteImage(item.posterUrl(), cdnImage),
-                ProviderSupport.absoluteImage(item.thumbUrl(), cdnImage),
+                ProviderSupport.absoluteImage(asUrl(item.posterUrl()), cdnImage),
+                ProviderSupport.absoluteImage(asUrl(item.thumbUrl()), cdnImage),
                 item.year(),
                 null,
                 null,
@@ -202,8 +202,8 @@ public class VsmovProvider implements MovieProvider {
                 movie.name(),
                 movie.originName(),
                 movie.content(),
-                ProviderSupport.absoluteImage(movie.posterUrl(), cdnImage),
-                ProviderSupport.absoluteImage(movie.thumbUrl(), cdnImage),
+                ProviderSupport.absoluteImage(asUrl(movie.posterUrl()), cdnImage),
+                ProviderSupport.absoluteImage(asUrl(movie.thumbUrl()), cdnImage),
                 movie.trailerUrl(),
                 movie.year(),
                 movie.type(),
@@ -239,6 +239,11 @@ public class VsmovProvider implements MovieProvider {
      * {@code "Vietsub\r\n            #1"}); gom lai thanh mot khoang trang. */
     private String cleanServerName(String name) {
         return name == null ? null : name.replaceAll("\\s+", " ").trim();
+    }
+
+    /** VSMOV doi khi tra {} (object rong) cho anh thieu; chi nhan khi la chuoi that. */
+    private static String asUrl(Object value) {
+        return value instanceof String url && !url.isBlank() ? url : null;
     }
 
     /** Bo ten rong va cac gia tri bao "dang cap nhat". */
