@@ -246,3 +246,81 @@ html.light .icon-when-light {
     animation: none;
   }
 }
+
+/*
+ * Hieu ung kieu YouTube moi cho trinh phat: cai chop tron o giua khi phat/dung,
+ * vong toa khi bam hai lan de tua, va bang cai dat mo ra muot.
+ */
+
+/* Chop tron o giua khi bam phat / tam dung. */
+@keyframes player-flash {
+  from {
+    opacity: 0.9;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 0;
+    transform: scale(1.3);
+  }
+}
+.player-flash {
+  animation: player-flash 500ms cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+/* Nen mo dan phia nua man khi bam hai lan de tua nhanh. */
+@keyframes player-ripple {
+  from {
+    opacity: 0.4;
+  }
+  to {
+    opacity: 0;
+  }
+}
+.player-ripple {
+  animation: player-ripple 500ms ease-out both;
+}
+
+/* Ba mui ten nhap nhay lan luot, giong nut tua cua YouTube tren dien thoai. */
+@keyframes player-chevron {
+  0%,
+  100% {
+    opacity: 0.25;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+.player-chevron > * {
+  animation: player-chevron 700ms ease-in-out infinite;
+}
+.player-chevron > :nth-child(2) {
+  animation-delay: 130ms;
+}
+.player-chevron > :nth-child(3) {
+  animation-delay: 260ms;
+}
+
+/* Bang cai dat / menu bat len tu nut banh rang. */
+@keyframes player-menu-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+.player-menu {
+  transform-origin: bottom right;
+  animation: player-menu-in 150ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .player-flash,
+  .player-ripple,
+  .player-chevron > *,
+  .player-menu {
+    animation: none;
+  }
+}
