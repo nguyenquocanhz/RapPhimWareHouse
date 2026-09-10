@@ -188,6 +188,10 @@ export function VideoPlayer({
   const [toastLeaving, setToastLeaving] = useState(false);
   const [toastHeld, setToastHeld] = useState(false);
 
+  // Cai chop tron o giua moi lan phat / tam dung, giong YouTube. Chi la phan nhin,
+  // khong dinh gi toi logic phat.
+  const [flash, setFlash] = useState<{ id: number; playing: boolean } | null>(null);
+
   const [savedVolume, setSavedVolume] = useLocalStorage<number>(
     VOLUME_KEY,
     1,
@@ -304,9 +308,25 @@ export function VideoPlayer({
 
   useEffect(() => {
     if (!nudge) return;
-    const timer = window.setTimeout(() => setNudge(null), 600);
+    const timer = window.setTimeout(() => setNudge(null), 700);
     return () => window.clearTimeout(timer);
   }, [nudge]);
+
+  /**
+   * Phat / tam dung kem cai chop o giua. Bao hieu bang trang thai sap toi (nguoc voi
+   * hien tai) vi {@code controls.toggle} chua kip cap nhat state luc nay.
+   */
+  const togglePlay = useCallback(() => {
+    setFlash({ id: Date.now(), playing: !state.playing });
+    controls.toggle();
+    show();
+  }, [controls, state.playing, show]);
+
+  useEffect(() => {
+    if (!flash) return;
+    const timer = window.setTimeout(() => setFlash(null), 500);
+    return () => window.clearTimeout(timer);
+  }, [flash]);
 
   // Ro chuot len thong bao thi giu nguyen: dang dua tay toi nut Hoan tac ma no
   // bien mat la kho chiu nhat.
@@ -542,8 +562,7 @@ export function VideoPlayer({
     switch (key) {
       case " ":
       case "k":
-        controls.toggle();
-        show();
+        togglePlay();
         break;
       case "j":
         nudgeBy(-seekStep);
@@ -721,7 +740,7 @@ export function VideoPlayer({
         playsInline
         preload="metadata"
         poster={poster ?? undefined}
-        onClick={controls.toggle}
+        onClick={togglePlay}
         onDoubleClick={toggleFullscreen}
         className="size-full"
       >
@@ -736,39 +755,86 @@ export function VideoPlayer({
         ))}
       </video>
 
-      {/* Dang tai: noi ro dang cho nguon, tranh cam giac trang bi treo */}
+      {/* Dang tai: vong xoay mong kieu YouTube, khong lam toi ca khung */}
       {state.waiting && !state.error && (
-        <div className="pointer-events-none absolute inset-0 grid place-items-center bg-black/45">
+        <div className="pointer-events-none absolute inset-0 grid place-items-center">
           <div className="flex flex-col items-center gap-3">
-            <span className="size-12 animate-spin rounded-full border-[3px] border-white/25 border-t-white" />
-            <span className="text-xs text-white/80">Đang tải từ nguồn…</span>
+            <span className="size-14 animate-spin rounded-full border-[3px] border-white/20 border-t-white" />
+            <span className="rounded bg-black/40 px-2 py-0.5 text-xs text-white/85 backdrop-blur-sm">
+              Đang tải từ nguồn…
+            </span>
           </div>
         </div>
       )}
 
       {/* Nut phat lon o giua khi dang dung */}
-      {!state.playing && !state.waiting && !state.error && (
+      {!state.playing && !state.waiting && !state.error && !flash && (
         <button
           type="button"
-          onClick={controls.toggle}
+          onClick={togglePlay}
           aria-label="Phát"
           className="absolute inset-0 grid place-items-center"
         >
-          <span className="grid size-16 place-items-center rounded-full bg-black/60 text-white transition hover:bg-brand">
-            <PlayIcon width={32} height={32} />
+          <span className="grid size-[68px] place-items-center rounded-full bg-black/55 text-white backdrop-blur-sm transition hover:scale-105 hover:bg-brand">
+            <PlayIcon width={34} height={34} />
           </span>
         </button>
       )}
 
-      {/* Bao hieu tua nhanh */}
+      {/* Chop tron phat / tam dung o giua, giong YouTube moi */}
+      {flash && (
+        <div
+          key={flash.id}
+          className="pointer-events-none absolute inset-0 grid place-items-center"
+        >
+          <span className="player-flash grid size-[72px] place-items-center rounded-full bg-black/55 text-white">
+            {flash.playing ? (
+              <PlayIcon width={34} height={34} />
+            ) : (
+              <PauseIcon width={34} height={34} />
+            )}
+          </span>
+        </div>
+      )}
+
+      {/* Bao hieu tua nhanh: nen mo dan mot nua man + ba mui ten nhap nhay */}
       {nudge && (
         <div
           key={nudge.id}
-          className={`pointer-events-none absolute top-1/2 -translate-y-1/2 rounded-full bg-black/70 px-4 py-3 text-sm font-medium text-white ${
-            nudge.seconds < 0 ? "left-8" : "right-8"
+          className={`pointer-events-none absolute inset-y-0 grid w-2/5 place-items-center ${
+            nudge.seconds < 0 ? "left-0" : "right-0"
           }`}
         >
-          {nudge.seconds < 0 ? "◀◀" : "▶▶"} {Math.abs(nudge.seconds)} giây
+          <span
+            aria-hidden="true"
+            className={`player-ripple absolute inset-0 bg-white/10 ${
+              nudge.seconds < 0
+                ? "rounded-r-[100%] [transform:translateX(-30%)]"
+                : "rounded-l-[100%] [transform:translateX(30%)]"
+            }`}
+          />
+          <div className="relative flex flex-col items-center gap-1 text-white">
+            <div
+              className={`player-chevron flex ${nudge.seconds < 0 ? "" : "flex-row-reverse"}`}
+            >
+              {nudge.seconds < 0 ? (
+                <>
+                  <ChevronLeftIcon width={22} height={22} />
+                  <ChevronLeftIcon width={22} height={22} />
+                  <ChevronLeftIcon width={22} height={22} />
+                </>
+              ) : (
+                <>
+                  <ChevronRightIcon width={22} height={22} />
+                  <ChevronRightIcon width={22} height={22} />
+                  <ChevronRightIcon width={22} height={22} />
+                </>
+              )}
+            </div>
+            <span className="text-sm font-medium tabular-nums">
+              {Math.abs(nudge.seconds)} giây
+            </span>
+          </div>
         </div>
       )}
 
@@ -846,7 +912,7 @@ export function VideoPlayer({
       <div
         onPointerEnter={keepVisible}
         onPointerLeave={() => state.playing && show()}
-        className={`absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent px-3 pb-2 pt-10 transition-opacity duration-200 ${
+        className={`absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/35 to-transparent px-3 pb-2.5 pt-14 transition-opacity duration-200 ${
           idle ? "pointer-events-none opacity-0" : "opacity-100"
         }`}
       >
@@ -913,7 +979,7 @@ export function VideoPlayer({
             )}
 
             <span
-              className="absolute top-1/2 size-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand opacity-0 transition-opacity group-hover/bar:opacity-100"
+              className="absolute top-1/2 size-3.5 -translate-x-1/2 -translate-y-1/2 scale-0 rounded-full bg-brand shadow-[0_0_3px_rgba(0,0,0,0.5)] transition-transform duration-150 group-hover/bar:scale-100"
               style={{ left: `${played}%` }}
             />
           </div>
@@ -980,7 +1046,7 @@ export function VideoPlayer({
 
           <ControlButton
             label={state.playing ? "Tạm dừng (k)" : "Phát (k)"}
-            onClick={controls.toggle}
+            onClick={togglePlay}
           >
             {state.playing ? <PauseIcon /> : <PlayIcon />}
           </ControlButton>
@@ -1021,12 +1087,11 @@ export function VideoPlayer({
                 label={subtitleIndex >= 0 ? "Tắt phụ đề (c)" : "Bật phụ đề (c)"}
                 onClick={() => setSubtitleIndex((current) => (current >= 0 ? -1 : 0))}
               >
-                <span
-                  className={`grid place-items-center rounded ${
-                    subtitleIndex >= 0 ? "bg-white text-black" : ""
-                  }`}
-                >
+                <span className="relative grid place-items-center">
                   <SubtitleIcon />
+                  {subtitleIndex >= 0 && (
+                    <span className="absolute -bottom-1 left-1/2 h-0.5 w-4 -translate-x-1/2 rounded-full bg-brand" />
+                  )}
                 </span>
               </ControlButton>
             )}
@@ -1317,7 +1382,7 @@ function SettingsMenu({
           />
 
           <div
-            className={`absolute bottom-11 right-0 z-20 overflow-hidden rounded-xl bg-black/95 py-2 text-sm text-white shadow-2xl ${
+            className={`player-menu absolute bottom-11 right-0 z-20 overflow-hidden rounded-xl bg-[#1c1c1c]/95 py-2 text-sm text-white shadow-2xl ring-1 ring-white/10 backdrop-blur-md ${
               panel === "audio" ? "w-80" : "w-56"
             }`}
           >
