@@ -18,6 +18,9 @@ public enum ProviderType {
     /** NguonC - phim.nguonc.com */
     NGUONC("nguonc"),
 
+    /** VSMOV - vsmov.com */
+    VSMOV("vsmov"),
+
     /** Kho phim rieng tren homelab, doc qua ZCloud. */
     HOMELAB("homelab");
 
@@ -41,6 +44,6 @@ public enum ProviderType {
                 .filter(p -> p.code.equalsIgnoreCase(value.trim()) || p.name().equalsIgnoreCase(value.trim()))
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException(
-                        "Nguon '" + value + "' khong hop le. Chi chap nhan: kkphim, nguonc, homelab"));
+                        "Nguon '" + value + "' khong hop le. Chi chap nhan: kkphim, nguonc, vsmov, homelab"));
     }
 }
