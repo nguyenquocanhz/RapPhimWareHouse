@@ -132,10 +132,20 @@ export interface TmdbDiscoverItem {
 
 /** Mot vai dien lay tu TheMovieDB. */
 export interface TmdbCast {
+  id: string | null;
   name: string | null;
   character: string | null;
   order: number | null;
   profileUrl: string | null;
+}
+
+/** Mot dien vien tren TheMovieDB kem cac phim ho tung dong. */
+export interface TmdbPerson {
+  id: string;
+  name: string | null;
+  profileUrl: string | null;
+  knownForDepartment: string | null;
+  films: TmdbDiscoverItem[];
 }
 
 /** Metadata day du cua mot phim tren TheMovieDB. */

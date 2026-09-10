@@ -7,6 +7,7 @@ import com.rapphim.warehouse.dto.Taxonomy;
 import com.rapphim.warehouse.dto.TmdbCast;
 import com.rapphim.warehouse.dto.TmdbDetail;
 import com.rapphim.warehouse.dto.TmdbDiscoverItem;
+import com.rapphim.warehouse.dto.TmdbPerson;
 import com.rapphim.warehouse.dto.TmdbDiscoverQuery;
 import com.rapphim.warehouse.exception.TmdbNotConfiguredException;
 import com.rapphim.warehouse.exception.UpstreamException;
@@ -22,9 +23,12 @@ import org.springframework.web.client.RestClientException;
 import org.springframework.web.util.UriBuilder;
 
 import java.net.URI;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * Cong ra TheMovieDB. Cung cap metadata day du de sinh file NFO va
@@ -57,6 +61,9 @@ public class TmdbClient {
 
     /** Chi giu vai dien chinh, du cho file NFO ma khong lam nang response. */
     private static final int MAX_CAST = 20;
+
+    /** Gioi han so phim tra ve o trang dien vien, tranh danh sach qua dai. */
+    private static final int PERSON_FILM_LIMIT = 40;
 
     private final RestClient client;
     private final TmdbProperties properties;
@@ -304,6 +311,62 @@ public class TmdbClient {
                 details.resolvedImdbId());
     }
 
+    /** Metadata mot dien vien kem phim ho dong; rong neu TMDB khong co ma nay. */
+    public Optional<TmdbPerson> person(String id) {
+        requireConfigured();
+        TmdbModels.Person data = call(
+                builder -> withAuth(builder.path("/person/{id}")
+                        .queryParam("language", properties.language())
+                        .queryParam("append_to_response", "combined_credits"))
+                        .build(id),
+                TmdbModels.Person.class);
+        if (data == null) {
+            return Optional.empty();
+        }
+        return Optional.of(toPerson(data));
+    }
+
+    private TmdbPerson toPerson(TmdbModels.Person person) {
+        List<TmdbDiscoverItem> films = List.of();
+        if (person.combinedCredits() != null && person.combinedCredits().cast() != null) {
+            films = person.combinedCredits().cast().stream()
+                    // Chi lay phim le (media_type = movie); bo ban ghi khong co ma.
+                    .filter(item -> "movie".equals(item.mediaType()) && item.id() != null)
+                    // Mot dien vien co the co nhieu vai trong cung phim -> gop theo ma phim.
+                    .collect(Collectors.toMap(TmdbModels.CreditItem::id, item -> item,
+                            (a, b) -> a, LinkedHashMap::new))
+                    .values().stream()
+                    .sorted(Comparator.comparingDouble(
+                            (TmdbModels.CreditItem item) -> item.popularity() == null ? 0 : item.popularity())
+                            .reversed())
+                    .limit(PERSON_FILM_LIMIT)
+                    .map(this::creditToItem)
+                    .toList();
+        }
+        return new TmdbPerson(
+                String.valueOf(person.id()),
+                person.name(),
+                properties.imageUrl(person.profilePath(), PROFILE_SIZE),
+                person.knownForDepartment(),
+                films);
+    }
+
+    private TmdbDiscoverItem creditToItem(TmdbModels.CreditItem item) {
+        return new TmdbDiscoverItem(
+                String.valueOf(item.id()),
+                item.title() != null ? item.title() : item.name(),
+                item.originalTitle() != null ? item.originalTitle() : item.originalName(),
+                null,
+                blankToNull(item.overview()),
+                blankToNull(item.releaseDate() != null ? item.releaseDate() : item.firstAirDate()),
+                item.voteAverage(),
+                item.voteCount(),
+                item.popularity(),
+                properties.imageUrl(item.posterPath(), POSTER_SIZE),
+                properties.imageUrl(item.backdropPath(), BACKDROP_SIZE),
+                ProviderSupport.orEmpty(item.genreIds()));
+    }
+
     private TmdbDiscoverItem toDiscoverItem(TmdbModels.Result result) {
         return new TmdbDiscoverItem(
                 String.valueOf(result.id()),
@@ -362,6 +425,7 @@ public class TmdbClient {
         return credits.cast().stream()
                 .limit(MAX_CAST)
                 .map(member -> new TmdbCast(
+                        member.id() == null ? null : String.valueOf(member.id()),
                         member.name(),
                         blankToNull(member.character()),
                         member.order(),

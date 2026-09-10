@@ -8,6 +8,9 @@ import io.swagger.v3.oas.annotations.media.Schema;
 @Schema(name = "TmdbCast", description = "Dien vien va vai dien")
 public record TmdbCast(
 
+        @Schema(description = "Ma dien vien tren TMDB, dung de xem phim ho dong", example = "1136406")
+        String id,
+
         @Schema(description = "Ten dien vien", example = "Hera Chan")
         String name,
 

@@ -7,6 +7,7 @@ import com.rapphim.warehouse.dto.Taxonomy;
 import com.rapphim.warehouse.dto.TmdbDetail;
 import com.rapphim.warehouse.dto.TmdbDiscoverItem;
 import com.rapphim.warehouse.dto.TmdbDiscoverQuery;
+import com.rapphim.warehouse.dto.TmdbPerson;
 import com.rapphim.warehouse.provider.tmdb.TmdbClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -75,6 +76,12 @@ public class TmdbService {
     @Cacheable(cacheNames = CacheConfig.MOVIE_DETAIL_CACHE, key = "'tmdb:' + #type + ':' + #id")
     public Optional<TmdbDetail> details(String type, String id) {
         return client.details(type, id);
+    }
+
+    /** Phim cua mot dien vien, tra theo ma TMDB cua nguoi do. */
+    @Cacheable(cacheNames = CacheConfig.MOVIE_DETAIL_CACHE, key = "'tmdb:person:' + #id")
+    public Optional<TmdbPerson> person(String id) {
+        return client.person(id);
     }
 
     @Cacheable(cacheNames = CacheConfig.MOVIE_LIST_CACHE,

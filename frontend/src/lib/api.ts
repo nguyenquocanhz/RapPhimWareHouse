@@ -8,6 +8,7 @@ import type {
   Taxonomy,
   TmdbDetail,
   TmdbDiscoverItem,
+  TmdbPerson,
   TmdbStatus,
 } from "@/lib/types";
 
@@ -207,6 +208,11 @@ export const api = {
   /** Chi tiet mot phim tren TMDB, tra theo ma TMDB. */
   tmdbMovie(id: string, type: "movie" | "tv" = "movie") {
     return request<TmdbDetail>(`/api/v1/tmdb/movies/${id}`, { type }, 3600);
+  },
+
+  /** Mot dien vien kem cac phim ho tung dong, tra theo ma TMDB. */
+  tmdbPerson(id: string) {
+    return request<TmdbPerson>(`/api/v1/tmdb/person/${id}`, {}, 3600);
   },
 
   tmdbStatus() {

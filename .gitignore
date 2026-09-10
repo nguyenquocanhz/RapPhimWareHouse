@@ -34,3 +34,7 @@ __pycache__/
 
 # Thu muc du lieu runtime (audit/settings/custom-sources) - sinh khi chay, khong commit
 data/
+
+# Next.js dev tu sinh (generate-agent-files), khong phai nguon
+/frontend/AGENTS.md
+/frontend/CLAUDE.md
