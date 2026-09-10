@@ -49,6 +49,11 @@ public class VsmovProvider implements MovieProvider {
 
     private static final String PROVIDER_CODE = "vsmov";
 
+    // VSMOV nam sau Cloudflare nen thi thoang bi ngat ngang giua chung ("Request cancelled")
+    // ngay sau khi container khoi dong lai. Thu lai vai lan de nuot cac cu chop nhoang nay.
+    private static final int NETWORK_ATTEMPTS = 3;
+    private static final long NETWORK_BACKOFF_MS = 200;
+
     private final RestClient client;
     private final String cdnImage;
 
@@ -143,17 +148,36 @@ public class VsmovProvider implements MovieProvider {
     }
 
     private <T> T call(Function<UriBuilder, URI> uriFunction, Class<T> responseType) {
+        UpstreamException last = null;
+        for (int attempt = 1; attempt <= NETWORK_ATTEMPTS; attempt++) {
+            try {
+                return client.get()
+                        .uri(uriFunction::apply)
+                        .retrieve()
+                        // 4xx kem body JSON: doc body de xu ly nhu du lieu rong thay vi nem loi.
+                        .onStatus(HttpStatusCode::is4xxClientError, (request, response) -> {
+                        })
+                        .body(responseType);
+            } catch (RestClientException ex) {
+                last = UpstreamException.network(PROVIDER_CODE, "VSMOV", ex);
+                log.debug("VSMOV loi mang lan {}/{}: {}", attempt, NETWORK_ATTEMPTS, ex.getMessage());
+                if (attempt == NETWORK_ATTEMPTS || !pause(attempt)) {
+                    log.warn("Goi VSMOV that bai sau {} lan: {}", attempt, ex.getMessage());
+                    throw last;
+                }
+            }
+        }
+        throw last;
+    }
+
+    /** Nghi giua hai lan thu, dan dan lau hon. Tra false neu luong bi ngat de dung thu ngay. */
+    private boolean pause(int attempt) {
         try {
-            return client.get()
-                    .uri(uriFunction::apply)
-                    .retrieve()
-                    // 4xx kem body JSON: doc body de xu ly nhu du lieu rong thay vi nem loi.
-                    .onStatus(HttpStatusCode::is4xxClientError, (request, response) -> {
-                    })
-                    .body(responseType);
-        } catch (RestClientException ex) {
-            log.warn("Goi VSMOV that bai: {}", ex.getMessage());
-            throw UpstreamException.network(PROVIDER_CODE, "VSMOV", ex);
+            Thread.sleep(NETWORK_BACKOFF_MS * attempt);
+            return true;
+        } catch (InterruptedException interrupted) {
+            Thread.currentThread().interrupt();
+            return false;
         }
     }
 
