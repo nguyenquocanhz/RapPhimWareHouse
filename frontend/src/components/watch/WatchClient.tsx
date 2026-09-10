@@ -529,6 +529,18 @@ function Stage({
             {theater ? "Chế độ mặc định" : "Chế độ rạp"}
           </button>
         </div>
+        {/*
+          Nhieu nguon chi-embed (nhu NguonC) dat X-Frame-Options: SAMEORIGIN nen trinh
+          duyet TU CHOI hien iframe cua ho tren trang minh - khung phat den thui. Khong
+          ep nhung duoc, nen cho duong mo thang o tab moi de van xem duoc.
+        */}
+        <p className="mt-2 text-center text-xs text-muted">
+          Không xem được?{" "}
+          <a href={embed} target="_blank" rel="noreferrer" className="text-fg underline">
+            Mở trình phát của nguồn ở tab mới
+          </a>{" "}
+          — một số nguồn (như NguonC) chặn phát nhúng trực tiếp.
+        </p>
         {switcher}
       </div>
     );
