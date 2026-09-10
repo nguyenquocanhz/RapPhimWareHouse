@@ -19,12 +19,14 @@ Không re-mux ở server: player phát từng đoạn audio theo mốc giờ và
 
 ## Lộ trình theo lát cắt
 
-- **Phase 1 (đang có):** dịch vụ + API job + **TTS từ cue có sẵn** (Edge chạy được; Piper
-  cần model). Đây là phần chạy/kiểm tra được trước, để khi OCR xong thì đường phát đã sẵn.
-- **Phase 2:** `POST /api/dub/from-video` — OCR hardsub bằng PaddleOCR/`videocr` + ffmpeg
-  → cue, rồi nối vào bước TTS.
+- **Phase 1 (xong):** dịch vụ + API job + **TTS từ cue có sẵn** (Edge chạy được; Piper
+  cần model).
+- **Phase 2 (xong):** **OCR hardsub → cue** — `POST /api/ocr`. Dùng ffmpeg lấy khung hình
+  vùng phụ đề + **RapidOCR** (model PaddleOCR đóng gói ONNX, CPU, mạnh tiếng Trung), gộp
+  khung trùng → cue kèm mốc giờ. Đã kiểm tra: clip hardsub tiếng Trung → 3 cue đúng chữ + giờ.
 - **Phase 3:** dịch zh/en → vi (offline hoặc online).
-- **Phase 4:** tích hợp player (nút "Thuyết minh", chọn engine/giọng, phát đồng bộ + ducking).
+- **Phase 4:** ghép chuỗi `POST /api/dub/from-video` (OCR → dịch → TTS) + tích hợp player
+  (nút "Thuyết minh", chọn engine/giọng, phát đồng bộ + ducking).
 
 ## API (Phase 1)
 
@@ -35,6 +37,8 @@ Không re-mux ở server: player phát từng đoạn audio theo mốc giờ và
 | POST | `/api/dub` | Body `{cues:[{start,end,text}], engine:"edge"\|"piper", voice?}` → `{jobId}` |
 | GET | `/api/dub/{jobId}` | Trạng thái + cue kèm URL audio |
 | GET | `/api/dub/{jobId}/media/{name}` | Tệp audio của cue |
+| POST | `/api/ocr` | Body `{url, fps?, region_top?, region_height?, start?, duration?, min_score?}` → `{jobId}` |
+| GET | `/api/ocr/{jobId}` | Trạng thái + cue OCR `{start,end,text}` (chữ ngôn ngữ gốc) |
 
 ## Chạy thử cục bộ
 

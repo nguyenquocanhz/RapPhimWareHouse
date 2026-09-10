@@ -42,6 +42,16 @@ class DubRequest(BaseModel):
     voice: str | None = None
 
 
+class OcrRequest(BaseModel):
+    url: str
+    fps: float = 2.0
+    region_top: float = 0.72
+    region_height: float = 0.28
+    start: float = 0.0
+    duration: float | None = None
+    min_score: float = 0.6
+
+
 @app.get("/health")
 def health() -> dict:
     return {"status": "ok", "service": "rapphim-dub"}
@@ -108,5 +118,65 @@ async def _run(jid: str, req: DubRequest) -> None:
             job["done"] += 1
         job["status"] = "done"
     except Exception as exc:  # noqa: BLE001 - go het loi vao job de client doc duoc
+        job["status"] = "error"
+        job["error"] = str(exc)
+
+
+# ----------------------------------------------------------------- OCR hardsub -> cue
+
+@app.post("/api/ocr")
+async def create_ocr(req: OcrRequest) -> dict:
+    jid = uuid.uuid4().hex[:12]
+    JOBS[jid] = {
+        "id": jid,
+        "kind": "ocr",
+        "status": "pending",
+        "done": 0,
+        "total": 0,
+        "error": None,
+        "cues": [],
+        "created": time.time(),
+    }
+    asyncio.create_task(_run_ocr(jid, req))
+    return {"jobId": jid, "status": "pending"}
+
+
+@app.get("/api/ocr/{jid}")
+def get_ocr(jid: str) -> dict:
+    job = JOBS.get(jid)
+    if not job:
+        raise HTTPException(status_code=404, detail="Khong thay job.")
+    return job
+
+
+async def _run_ocr(jid: str, req: OcrRequest) -> None:
+    import ocr  # nap tre: model OCR nang, chi tai khi that su OCR
+
+    job = JOBS[jid]
+    job["status"] = "running"
+    loop = asyncio.get_running_loop()
+
+    def progress(done: int, total: int) -> None:
+        job["done"] = done
+        job["total"] = total
+
+    try:
+        # OCR la CPU-bound + chan; chay trong executor de khong treo event loop.
+        cues = await loop.run_in_executor(
+            None,
+            lambda: ocr.extract_cues(
+                req.url,
+                fps=req.fps,
+                region_top=req.region_top,
+                region_height=req.region_height,
+                start=req.start,
+                duration=req.duration,
+                min_score=req.min_score,
+                progress=progress,
+            ),
+        )
+        job["cues"] = cues
+        job["status"] = "done"
+    except Exception as exc:  # noqa: BLE001
         job["status"] = "error"
         job["error"] = str(exc)
