@@ -130,8 +130,9 @@ public class ZCloudClient {
         }
 
         try {
+            // Method phai la chu thuong: enum cua ZCloud la ["get","put"], "GET" se bi 422.
             PresignRequest body = new PresignRequest(
-                    key, "GET", (int) properties.presignExpiry().toSeconds(), false);
+                    key, "get", (int) properties.presignExpiry().toSeconds(), false);
 
             RestClient.RequestBodySpec spec = client.post()
                     .uri("/v1/presign")

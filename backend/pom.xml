@@ -34,6 +34,16 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-restclient</artifactId>
 		</dependency>
+		<!--
+		  Apache HttpClient5 lam nen cho RestClient. BAT BUOC, khong chi de toi uu:
+		  factory JDK (java.net.http, ban detect() tu chon) gui than POST bang chunked
+		  khong Content-Length, mot so may chu (uvicorn/FastAPI cua ZCloud) doc thanh
+		  RONG -> 422. Apache gui Content-Length nen than POST toi noi. Xem RestClientConfig.
+		-->
+		<dependency>
+			<groupId>org.apache.httpcomponents.client5</groupId>
+			<artifactId>httpclient5</artifactId>
+		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-cache</artifactId>

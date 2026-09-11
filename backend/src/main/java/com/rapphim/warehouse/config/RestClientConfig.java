@@ -36,12 +36,20 @@ public class RestClientConfig {
         this.jikanProperties = jikanProperties;
     }
 
-    /** Factory dung chung, gioi han thoi gian cho de mot nguon cham khong lam treo API. */
+    /**
+     * Factory dung chung, gioi han thoi gian cho de mot nguon cham khong lam treo API.
+     *
+     * <p>Bat buoc dung Apache HttpClient5, KHONG dung {@code detect()}: ban detect() se
+     * chon factory JDK ({@code java.net.http.HttpClient}), ma factory nay gui than POST
+     * bang chunked khong kem Content-Length. Mot so may chu (uvicorn/FastAPI cua ZCloud,
+     * va GraphQL cua AniList) doc than do thanh RONG -> tra 422 "body required". Apache
+     * gui Content-Length nen than POST toi noi. Xem them chu thich o pom.xml.</p>
+     */
     @Bean
     public ClientHttpRequestFactory providerRequestFactory() {
         HttpClientSettings settings = HttpClientSettings.defaults()
                 .withTimeouts(properties.connectTimeout(), properties.readTimeout());
-        return ClientHttpRequestFactoryBuilder.detect().build(settings);
+        return ClientHttpRequestFactoryBuilder.httpComponents().build(settings);
     }
 
     @Bean
