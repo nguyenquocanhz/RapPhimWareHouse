@@ -158,15 +158,30 @@ public class HomelabProvider implements MovieProvider {
         return PageResponse.of(items, PageMeta.of(query.page(), query.limit(), titles.size()), type().code());
     }
 
+    /** Khoa file video cua tap dau tien cua mot phim - dung de sinh anh poster. */
+    public java.util.Optional<String> firstEpisodeKey(String slug) {
+        return library().stream()
+                .filter(title -> title.slug().equals(slug))
+                .findFirst()
+                .flatMap(title -> title.episodes().stream().findFirst())
+                .map(LibraryEpisode::key);
+    }
+
+    /** URL poster tro ve endpoint sinh thumbnail cua backend (frontend proxy qua /api/thumbnail). */
+    private static String posterUrl(String slug) {
+        return "/api/thumbnail?slug=" + slug;
+    }
+
     private MovieSummary toSummary(LibraryTitle title) {
         boolean series = title.episodes().size() > 1;
+        String poster = posterUrl(title.slug());
         return new MovieSummary(
                 title.slug(),
                 title.slug(),
                 title.name(),
                 null,
-                null,
-                null,
+                poster,
+                poster,
                 yearIn(title.name()),
                 series ? "series" : "single",
                 null,
@@ -184,6 +199,7 @@ public class HomelabProvider implements MovieProvider {
 
     private MovieDetail toDetail(LibraryTitle title) {
         boolean series = title.episodes().size() > 1;
+        String poster = posterUrl(title.slug());
 
         List<Episode> episodes = title.episodes().stream()
                 .map(episode -> new Episode(
@@ -204,8 +220,8 @@ public class HomelabProvider implements MovieProvider {
                 title.name(),
                 null,
                 "Phim trong kho riêng trên homelab.",
-                null,
-                null,
+                poster,
+                poster,
                 null,
                 yearIn(title.name()),
                 series ? "series" : "single",
