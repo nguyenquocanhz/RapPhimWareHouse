@@ -167,9 +167,15 @@ public class HomelabProvider implements MovieProvider {
                 .map(LibraryEpisode::key);
     }
 
-    /** URL poster tro ve endpoint sinh thumbnail cua backend (frontend proxy qua /api/thumbnail). */
+    /**
+     * URL poster tro ve endpoint sinh thumbnail (frontend proxy qua /api/thumbnail).
+     *
+     * <p>Dung dang duong dan chu khong query: {@code next/image} tu choi toi uu local
+     * URL co query string (tra 400) neu chua khai bao localPatterns. Slug la kebab-case
+     * ASCII nen an toan lam mot doan duong dan.</p>
+     */
     private static String posterUrl(String slug) {
-        return "/api/thumbnail?slug=" + slug;
+        return "/api/thumbnail/" + slug;
     }
 
     private MovieSummary toSummary(LibraryTitle title) {

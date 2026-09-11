@@ -3,13 +3,14 @@ import { type NextRequest, NextResponse } from "next/server";
 /**
  * Cau noi de <img> lay duoc anh poster cua kho rieng.
  *
- * Anh duoc backend sinh tu khung hinh video (ffmpeg) roi cache. Goi vong qua day cho
- * cung goc voi trang - giong /api/subtitle - thay vi tro thang vao backend noi bo.
+ * Dung dang duong dan (/api/thumbnail/<slug>) chu khong query: next/image tu choi toi
+ * uu local URL co query string. Anh do backend sinh tu khung hinh video (ffmpeg) roi
+ * cache; goi vong qua day cho cung goc voi trang, giong /api/subtitle.
  */
-export async function GET(request: NextRequest) {
-  const slug = request.nextUrl.searchParams.get("slug");
+export async function GET(_request: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
   if (!slug) {
-    return new NextResponse("Thiếu tham số slug.", { status: 400 });
+    return new NextResponse("Thiếu slug.", { status: 400 });
   }
 
   const base =
@@ -19,14 +20,12 @@ export async function GET(request: NextRequest) {
   try {
     const response = await fetch(target, { cache: "no-store" });
     if (!response.ok) {
-      // Khong co anh -> tra 404 de <Image> chuyen sang o giu cho.
       return new NextResponse("Không có ảnh.", { status: response.status });
     }
 
     return new NextResponse(await response.arrayBuffer(), {
       headers: {
         "content-type": response.headers.get("content-type") ?? "image/jpeg",
-        // Anh khong doi, giu lai lau de khoi sinh lai.
         "cache-control": "public, max-age=604800",
       },
     });
