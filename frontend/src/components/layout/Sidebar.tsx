@@ -38,6 +38,7 @@ const PRIMARY: NavItem[] = [
   { href: "/danh-sach/phim-le", label: "Phim lẻ", icon: <FilmIcon /> },
   { href: "/danh-sach/tv-shows", label: "TV Shows", icon: <TvShowIcon /> },
   { href: "/danh-sach/hoat-hinh", label: "Hoạt hình", icon: <AnimationIcon /> },
+  { href: "/truyen-hinh", label: "Truyền hình", icon: <TvShowIcon /> },
 ];
 
 const LIBRARY: NavItem[] = [
