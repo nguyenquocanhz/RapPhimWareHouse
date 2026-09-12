@@ -1,0 +1,76 @@
+name: Build iOS (unsigned IPA)
+
+# Build app iOS tren may Mac cua GitHub, xuat file .ipa CHUA KY.
+# Sau do sideload len iPhone bang Sideloadly/AltStore voi Apple ID mien phi
+# (Apple cho phep ky phat trien ca nhan - khong can Apple Developer tra phi).
+#
+# Chay tay o tab Actions (Run workflow), hoac tu dong khi sua mobile/.
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [mobile-app]
+    paths:
+      - "mobile/**"
+      - ".github/workflows/ios-build.yml"
+
+jobs:
+  build:
+    runs-on: macos-latest
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Cai JS deps
+        run: npm ci
+
+      - name: Sinh du an native iOS (expo prebuild)
+        run: npx expo prebuild -p ios --no-install
+
+      - name: Cai CocoaPods
+        run: |
+          cd ios
+          pod install
+
+      - name: Build .app (khong ky)
+        run: |
+          set -e
+          WORKSPACE=$(ls ios/*.xcworkspace | head -1)
+          SCHEME=$(basename "$WORKSPACE" .xcworkspace)
+          echo "Workspace=$WORKSPACE  Scheme=$SCHEME"
+          xcodebuild \
+            -workspace "$WORKSPACE" \
+            -scheme "$SCHEME" \
+            -configuration Release \
+            -sdk iphoneos \
+            -derivedDataPath build \
+            -destination 'generic/platform=iOS' \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            build
+
+      - name: Dong goi .ipa (chua ky)
+        run: |
+          set -e
+          APP=$(ls -d build/Build/Products/Release-iphoneos/*.app | head -1)
+          echo "App=$APP"
+          mkdir -p Payload
+          cp -R "$APP" Payload/
+          zip -qr RapPhim-unsigned.ipa Payload
+          ls -la RapPhim-unsigned.ipa
+
+      - name: Tai len artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: RapPhim-ios-unsigned
+          path: mobile/RapPhim-unsigned.ipa
+          if-no-files-found: error
