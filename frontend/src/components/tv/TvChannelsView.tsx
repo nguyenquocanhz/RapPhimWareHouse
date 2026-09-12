@@ -2,16 +2,22 @@
 
 import { useState } from "react";
 
-import { usePlayer } from "@/components/watch/usePlayer";
+import { VideoPlayer } from "@/components/watch/VideoPlayer";
 import type { TvChannel } from "@/lib/types";
 
 /**
- * Trang kenh truyen hinh truc tiep. Bam mot kenh la phat ngay bang trinh phat HLS
- * (dung chung hls.js voi trinh phat phim). Kenh la luong .m3u8 truc tiep.
+ * Trang kenh truyen hinh truc tiep. Bam mot kenh la phat ngay bang RapPhim Player
+ * (dung chung trinh phat co san voi phim). Kenh la luong .m3u8 truc tiep nen dat
+ * sourceKind = "hls"; khong co tap/chuong/phu de nen cac prop do de trong.
  */
 export function TvChannelsView({ channels }: { channels: TvChannel[] }) {
   const [active, setActive] = useState<TvChannel | null>(null);
-  const { videoRef, state } = usePlayer(active?.url ?? null, "hls");
+  const [theater, setTheater] = useState(false);
+
+  const close = () => {
+    setActive(null);
+    setTheater(false);
+  };
 
   return (
     <div className="px-4 py-5 sm:px-6">
@@ -21,34 +27,26 @@ export function TvChannelsView({ channels }: { channels: TvChannel[] }) {
       </header>
 
       {active && (
-        <div className="mb-6 overflow-hidden rounded-xl border border-border bg-black">
-          <div className="relative aspect-video w-full">
-            <video
-              ref={videoRef}
-              controls
-              autoPlay
-              playsInline
-              className="h-full w-full bg-black"
+        <div className="mb-6">
+          <div className={theater ? "-mx-4 bg-black sm:-mx-6" : "overflow-hidden rounded-xl"}>
+            <VideoPlayer
+              key={active.url}
+              src={active.url}
+              sourceKind="hls"
+              title={active.name}
+              poster={active.logo}
+              theater={theater}
+              onToggleTheater={() => setTheater((v) => !v)}
             />
-            {state.waiting && !state.error && (
-              <div className="pointer-events-none absolute inset-0 grid place-items-center text-sm text-white/80">
-                Đang tải luồng…
-              </div>
-            )}
-            {state.error && (
-              <div className="absolute inset-0 grid place-items-center p-4 text-center text-sm text-white/80">
-                Không phát được kênh này — có thể kênh đang tắt hoặc bị chặn theo khu vực.
-              </div>
-            )}
           </div>
-          <div className="flex items-center justify-between gap-3 px-4 py-3">
+          <div className="mt-3 flex items-center justify-between gap-3">
             <div className="min-w-0">
-              <p className="truncate font-medium">{active.name}</p>
+              <p className="truncate font-medium text-fg">{active.name}</p>
               {active.group && <p className="truncate text-xs text-muted">{active.group}</p>}
             </div>
             <button
               type="button"
-              onClick={() => setActive(null)}
+              onClick={close}
               className="shrink-0 rounded-full border border-border px-3 py-1.5 text-sm hover:bg-surface-hover"
             >
               Đóng
