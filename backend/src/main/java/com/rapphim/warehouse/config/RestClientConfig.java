@@ -23,17 +23,20 @@ public class RestClientConfig {
     private final ZCloudProperties zcloudProperties;
     private final AniListProperties aniListProperties;
     private final JikanProperties jikanProperties;
+    private final IptvProperties iptvProperties;
 
     public RestClientConfig(ProviderProperties properties,
                             TmdbProperties tmdbProperties,
                             ZCloudProperties zcloudProperties,
                             AniListProperties aniListProperties,
-                            JikanProperties jikanProperties) {
+                            JikanProperties jikanProperties,
+                            IptvProperties iptvProperties) {
         this.properties = properties;
         this.tmdbProperties = tmdbProperties;
         this.zcloudProperties = zcloudProperties;
         this.aniListProperties = aniListProperties;
         this.jikanProperties = jikanProperties;
+        this.iptvProperties = iptvProperties;
     }
 
     /**
@@ -121,6 +124,20 @@ public class RestClientConfig {
                 .requestFactory(factory)
                 .baseUrl(zcloudProperties.baseUrl())
                 .defaultHeader(HttpHeaders.USER_AGENT, USER_AGENT)
+                .build();
+    }
+
+    /**
+     * Client cho iptv-org (kho playlist M3U cong khai). Playlist tra ve la text/plain,
+     * khong phai JSON, nen KHONG dat Accept: application/json o day.
+     */
+    @Bean
+    public RestClient iptvRestClient(RestClient.Builder builder, ClientHttpRequestFactory factory) {
+        return builder.clone()
+                .requestFactory(factory)
+                .baseUrl(iptvProperties.baseUrl())
+                .defaultHeader(HttpHeaders.USER_AGENT, USER_AGENT)
+                .defaultHeader(HttpHeaders.ACCEPT, MediaType.ALL_VALUE)
                 .build();
     }
 
