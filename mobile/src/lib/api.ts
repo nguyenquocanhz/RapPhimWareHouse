@@ -1,4 +1,4 @@
-import { API_BASE, WEB_BASE } from "./config";
+import { apiBase, webBase } from "./settings";
 
 /** Vo boc phan hoi chung cua backend. */
 interface ApiResponse<T> {
@@ -81,7 +81,7 @@ export const LIST_TYPES = [
 ] as const;
 
 async function getJson<T>(path: string, params: Record<string, string | number | undefined> = {}): Promise<T> {
-  const url = new URL(API_BASE + path);
+  const url = new URL(apiBase() + path);
   for (const [key, value] of Object.entries(params)) {
     if (value !== undefined && value !== null && value !== "") {
       url.searchParams.set(key, String(value));
@@ -122,5 +122,5 @@ export function providers() {
 export function imageUrl(url?: string | null): string | null {
   if (!url) return null;
   if (url.startsWith("http://") || url.startsWith("https://")) return url;
-  return WEB_BASE + (url.startsWith("/") ? url : "/" + url);
+  return webBase() + (url.startsWith("/") ? url : "/" + url);
 }

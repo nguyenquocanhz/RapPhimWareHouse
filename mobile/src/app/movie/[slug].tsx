@@ -6,7 +6,8 @@ import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { detail, imageUrl, type Episode, type MovieDetail } from "@/lib/api";
-import { DEFAULT_PROVIDER, WEB_BASE } from "@/lib/config";
+import { DEFAULT_PROVIDER } from "@/lib/config";
+import { webBase } from "@/lib/settings";
 import { theme } from "@/lib/theme";
 
 export default function MovieScreen() {
@@ -25,7 +26,7 @@ export default function MovieScreen() {
     };
   }, [slug, provider]);
 
-  const watchUrl = `${WEB_BASE}/phim/${encodeURIComponent(slug)}?provider=${encodeURIComponent(provider)}`;
+  const watchUrl = `${webBase()}/phim/${encodeURIComponent(slug)}?provider=${encodeURIComponent(provider)}`;
   const openWatch = () =>
     router.push({ pathname: "/watch", params: { url: watchUrl, title: movie?.name ?? "" } });
 

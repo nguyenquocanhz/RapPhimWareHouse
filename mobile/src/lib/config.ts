@@ -1,16 +1,13 @@
 /**
- * Dia chi backend. App la client mong: chi goi REST API co san, khong nhung du lieu.
+ * Giá trị mặc định cho địa chỉ backend. Người dùng có thể đổi trong màn Cài đặt
+ * (lưu lại bằng AsyncStorage — xem settings.ts). Cũng có thể đặt qua biến môi trường
+ * EXPO_PUBLIC_* khi chạy dev.
  *
- * Backend homelab chay o cong 7101 (API) va 7100 (web). Anh poster cua kho rieng la
- * URL tuong doi (/api/thumbnail/...) do web phuc vu, nen can them WEB_BASE khi resolve.
- *
- * Doi dia chi o day (hoac dat qua bien moi truong EXPO_PUBLIC_*) cho khop mang cua ban.
- * May that / dien thoai that phai cung mang LAN voi homelab moi goi duoc.
+ * App là client mỏng: chỉ gọi REST API có sẵn, không nhúng dữ liệu.
  */
-const HOST = process.env.EXPO_PUBLIC_HOST ?? "192.168.100.169";
+export const DEFAULT_HOST = process.env.EXPO_PUBLIC_HOST ?? "192.168.100.169";
+export const DEFAULT_API_PORT = process.env.EXPO_PUBLIC_API_PORT ?? "7101";
+export const DEFAULT_WEB_PORT = process.env.EXPO_PUBLIC_WEB_PORT ?? "7100";
 
-export const API_BASE = process.env.EXPO_PUBLIC_API_BASE ?? `http://${HOST}:7101/api/v1`;
-export const WEB_BASE = process.env.EXPO_PUBLIC_WEB_BASE ?? `http://${HOST}:7100`;
-
-/** Nguon mac dinh khi mo app. */
+/** Nguồn mặc định khi mở app. */
 export const DEFAULT_PROVIDER = "kkphim";

@@ -15,6 +15,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { MovieCard } from "@/components/MovieCard";
 import { latest, listByType, LIST_TYPES, providers, type MovieSummary } from "@/lib/api";
 import { DEFAULT_PROVIDER } from "@/lib/config";
+import { onBackendChange } from "@/lib/settings";
 import { theme } from "@/lib/theme";
 
 const CATEGORIES = [{ type: "", label: "Mới cập nhật" }, ...LIST_TYPES];
@@ -69,6 +70,20 @@ export default function HomeScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [provider, category]);
 
+  // Doi dia chi backend trong Cai dat -> nap lai nguon + feed.
+  useEffect(
+    () =>
+      onBackendChange(() => {
+        providers()
+          .then((list) => list.length && setSources(list))
+          .catch(() => {});
+        setMovies([]);
+        setDone(false);
+        load(1, true);
+      }),
+    [load],
+  );
+
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
       <View style={styles.header}>
@@ -78,9 +93,14 @@ export default function HomeScreen() {
             Rap<Text style={{ color: theme.primary }}>Phim</Text>
           </Text>
         </View>
-        <Pressable onPress={() => router.push("/search")} hitSlop={10}>
-          <Ionicons name="search" size={24} color={theme.text} />
-        </Pressable>
+        <View style={styles.actions}>
+          <Pressable onPress={() => router.push("/search")} hitSlop={10}>
+            <Ionicons name="search" size={24} color={theme.text} />
+          </Pressable>
+          <Pressable onPress={() => router.push("/settings")} hitSlop={10}>
+            <Ionicons name="settings-outline" size={23} color={theme.text} />
+          </Pressable>
+        </View>
       </View>
 
       <FlatList
@@ -186,6 +206,7 @@ const styles = StyleSheet.create({
   },
   brand: { flexDirection: "row", alignItems: "center", gap: 6 },
   brandText: { color: theme.text, fontSize: 20, fontWeight: "800" },
+  actions: { flexDirection: "row", alignItems: "center", gap: 18 },
   list: { paddingHorizontal: 16, paddingBottom: 24 },
   chipRow: { gap: 8, paddingVertical: 8 },
   chip: {
