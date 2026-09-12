@@ -1,0 +1,4 @@
+# Gói build (tạo lại bằng ares-package)
+*.ipk
+node_modules/
+.wrangler/

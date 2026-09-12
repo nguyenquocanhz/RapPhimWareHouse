@@ -1,0 +1,110 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=1920, initial-scale=1" />
+    <title>RapPhim TV</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: #0f0f0f;
+        color: #fff;
+        font-family: "LG Smart", system-ui, sans-serif;
+        overflow: hidden;
+      }
+      .wrap {
+        display: flex;
+        height: 100%;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 22px;
+      }
+      .brand {
+        font-size: 56px;
+        font-weight: 800;
+        letter-spacing: 1px;
+      }
+      .brand b {
+        color: #ff0033;
+      }
+      .msg {
+        color: #aaa;
+        font-size: 22px;
+      }
+      .err {
+        color: #ff5a5a;
+        font-size: 18px;
+        max-width: 70%;
+        text-align: center;
+      }
+      .spin {
+        width: 46px;
+        height: 46px;
+        border: 4px solid #333;
+        border-top-color: #ff0033;
+        border-radius: 50%;
+        animation: r 0.9s linear infinite;
+      }
+      @keyframes r {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="brand">RapPhim <b>TV</b></div>
+      <div class="spin"></div>
+      <div class="msg" id="msg">Đang mở kho phim…</div>
+      <div class="err" id="err"></div>
+    </div>
+    <script>
+      // App vo webOS: mo thang web RapPhim dang chay trong mang nha.
+      // Doi dia chi o day neu backend chuyen may.
+      var APP_URL = "http://192.168.100.169:7100";
+
+      function fail(reason) {
+        document.getElementById("msg").textContent = "Không mở được kho phim.";
+        document.getElementById("err").textContent =
+          "Kiểm tra TV và máy chủ (" + APP_URL + ") có cùng mạng không. " + (reason || "");
+      }
+
+      // Thu goi trang chu truoc, ok thi dieu huong; loi thi bao ro.
+      try {
+        var done = false;
+        var t = setTimeout(function () {
+          if (!done) location.replace(APP_URL);
+        }, 2500);
+        var xhr = new XMLHttpRequest();
+        xhr.open("GET", APP_URL, true);
+        xhr.timeout = 4000;
+        xhr.onreadystatechange = function () {
+          if (xhr.readyState === 4) {
+            done = true;
+            clearTimeout(t);
+            if (xhr.status >= 200 && xhr.status < 500) location.replace(APP_URL);
+            else fail("Máy chủ trả mã " + xhr.status + ".");
+          }
+        };
+        xhr.ontimeout = function () {
+          done = true;
+          clearTimeout(t);
+          fail("Máy chủ không phản hồi.");
+        };
+        xhr.onerror = function () {
+          // Loi mang (CORS/khac goc) van thu dieu huong thang.
+          done = true;
+          clearTimeout(t);
+          location.replace(APP_URL);
+        };
+        xhr.send();
+      } catch (e) {
+        location.replace(APP_URL);
+      }
+    </script>
+  </body>
+</html>

@@ -1,0 +1,14 @@
+{
+  "id": "com.rapphim.tv",
+  "version": "1.0.0",
+  "vendor": "RapPhim",
+  "type": "web",
+  "main": "index.html",
+  "title": "RapPhim TV",
+  "icon": "icon.png",
+  "largeIcon": "largeIcon.png",
+  "bgColor": "#0f0f0f",
+  "iconColor": "#ff0033",
+  "supportPortraitMode": false,
+  "disableBackHistoryAPI": false
+}
