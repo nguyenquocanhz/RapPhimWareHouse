@@ -19,6 +19,8 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "*.vsphim.com" },
       // Poster va anh dien vien cua trang Kham pha lay tu CDN cua TheMovieDB.
       { protocol: "https", hostname: "image.tmdb.org" },
+      // Khi ISP chan TMDB, anh di qua Cloudflare Worker proxy (*.workers.dev).
+      { protocol: "https", hostname: "*.workers.dev" },
     ],
     formats: ["image/webp"],
     minimumCacheTTL: 3600,
