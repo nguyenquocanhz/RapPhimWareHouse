@@ -35,6 +35,7 @@ export function TvChannelsView({ channels }: { channels: TvChannel[] }) {
               sourceKind="hls"
               title={active.name}
               poster={active.logo}
+              live
               theater={theater}
               onToggleTheater={() => setTheater((v) => !v)}
             />
