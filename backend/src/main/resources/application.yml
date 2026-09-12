@@ -38,8 +38,10 @@ rapphim:
   # Thieu ca hai thi cac endpoint TMDB tra 503 TMDB_NOT_CONFIGURED,
   # rieng endpoint xuat NFO van chay bang du lieu cua nguon phim.
   tmdb:
-    base-url: https://api.themoviedb.org/3
-    image-base-url: https://image.tmdb.org/t/p
+    # De trong TMDB_BASE_URL thi goi thang TMDB. ISP chan api.themoviedb.org (SNI/DPI)
+    # thi tro qua Cloudflare Worker proxy - xem tmdb-proxy/README.md.
+    base-url: ${TMDB_BASE_URL:https://api.themoviedb.org/3}
+    image-base-url: ${TMDB_IMAGE_BASE_URL:https://image.tmdb.org/t/p}
     language: vi-VN
     access-token: ${TMDB_ACCESS_TOKEN:}
     api-key: ${TMDB_API_KEY:}
@@ -52,6 +54,12 @@ rapphim:
   # Jikan (MyAnimeList): nguon metadata anime DU PHONG cho AniList. REST, khong khoa.
   jikan:
     base-url: https://api.jikan.moe/v4
+
+  # Kenh truyen hinh truc tiep (iptv-org - playlist cong khai, hop phap). Server chi
+  # phuc vu DANH SACH kenh; luong phat la cua dai/ben thu ba. De trong la dung mac dinh.
+  iptv:
+    base-url: https://iptv-org.github.io
+    vn-path: /iptv/countries/vn.m3u
 
   # Kho phim rieng tren homelab (ZCloud - FastAPI + S3).
   # Khong dat khoa truc tiep o day. Dat bien moi truong truoc khi chay:

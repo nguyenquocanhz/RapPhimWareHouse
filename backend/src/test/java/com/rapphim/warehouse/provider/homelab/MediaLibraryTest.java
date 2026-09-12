@@ -118,4 +118,48 @@ class MediaLibraryTest {
     void slugifiesVietnamese(String name, String expected) {
         assertThat(MediaLibrary.slugify(name)).isEqualTo(expected);
     }
+
+    @Test
+    @DisplayName("File nam thang duoi prefix thanh phim le; thu muc con nhieu tap thanh phim bo")
+    void flatFilesBecomeSingleTitles() {
+        List<LibraryTitle> titles = MediaLibrary.build(List.of(
+                file("Movies/Phim A.mp4"),
+                file("Movies/Phim B.mkv"),
+                file("Movies/Bo Phim/Tap 01.mp4"),
+                file("Movies/Bo Phim/Tap 02.mp4")
+        ), "Movies/");
+
+        assertThat(titles).extracting(LibraryTitle::slug)
+                .containsExactlyInAnyOrder("phim-a", "phim-b", "bo-phim");
+
+        LibraryTitle phimA = titles.stream().filter(t -> t.slug().equals("phim-a")).findFirst().orElseThrow();
+        assertThat(phimA.name()).isEqualTo("Phim A");
+        assertThat(phimA.episodes()).hasSize(1);
+
+        LibraryTitle boPhim = titles.stream().filter(t -> t.slug().equals("bo-phim")).findFirst().orElseThrow();
+        assertThat(boPhim.episodes()).hasSize(2);
+    }
+
+    @Test
+    @DisplayName("Ten phim le lay tu ten file, khong dinh tien to thu muc")
+    void singleTitleNameStripsFolderPrefix() {
+        List<LibraryTitle> titles = MediaLibrary.build(List.of(
+                file("Movies/Nàng Thơ.mp4")
+        ), "Movies/");
+
+        assertThat(titles).hasSize(1);
+        assertThat(titles.get(0).name()).isEqualTo("Nàng Thơ");
+    }
+
+    @Test
+    @DisplayName("File phang trung slug duoc them hau to de khong mo nham phim")
+    void deduplicatesFlatSlugs() {
+        List<LibraryTitle> titles = MediaLibrary.build(List.of(
+                file("Movies/杏 - AV28.mp4"),
+                file("Movies/なみん - AV28.mp4")
+        ), "Movies/");
+
+        assertThat(titles).hasSize(2);
+        assertThat(titles).extracting(LibraryTitle::slug).doesNotHaveDuplicates();
+    }
 }

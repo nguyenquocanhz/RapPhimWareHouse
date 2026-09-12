@@ -197,3 +197,12 @@ export interface ListParams {
   sortType?: "asc" | "desc";
   provider?: ProviderCode;
 }
+
+/** Mot kenh truyen hinh truc tiep (nguon iptv-org, phuc vu qua backend). */
+export interface TvChannel {
+  id: string;
+  name: string;
+  logo: string | null;
+  group: string | null;
+  url: string;
+}

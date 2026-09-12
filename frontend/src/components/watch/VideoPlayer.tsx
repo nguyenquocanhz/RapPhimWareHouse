@@ -86,6 +86,8 @@ interface VideoPlayerProps {
   episodeLabel?: string | null;
   /** Ten tap ke tiep, hien tren man hinh het tap de biet sap xem gi. */
   nextEpisodeName?: string | null;
+  /** Kenh phat truc tiep: an thanh tua + thoi luong (tua khong y nghia voi live). */
+  live?: boolean;
 }
 
 const RATES = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2];
@@ -179,6 +181,7 @@ export function VideoPlayer({
   subtitles,
   episodeLabel,
   nextEpisodeName,
+  live = false,
 }: VideoPlayerProps) {
   const { videoRef, state, controls } = usePlayer(src, sourceKind);
   const {
@@ -992,7 +995,7 @@ export function VideoPlayer({
           onPointerUp={onScrubEnd}
           onPointerEnter={startPreview}
           onPointerLeave={() => setHover(null)}
-          className="group/bar relative flex h-6 cursor-pointer items-center"
+          className={`group/bar relative flex h-6 cursor-pointer items-center ${live ? "hidden" : ""}`}
         >
           <div className="relative h-[3px] w-full transition-all group-hover/bar:h-[5px]">
             {/* Moi chuong la mot doan rieng, cach nhau mot khe nho */}
@@ -1099,12 +1102,14 @@ export function VideoPlayer({
             </ControlButton>
           )}
 
-          <ControlButton
-            label={`Tua lùi ${seekStep} giây (j)`}
-            onClick={() => nudgeBy(-seekStep)}
-          >
-            <SeekBackIcon seconds={seekStep} />
-          </ControlButton>
+          {!live && (
+            <ControlButton
+              label={`Tua lùi ${seekStep} giây (j)`}
+              onClick={() => nudgeBy(-seekStep)}
+            >
+              <SeekBackIcon seconds={seekStep} />
+            </ControlButton>
+          )}
 
           <ControlButton
             label={state.playing ? "Tạm dừng (k)" : "Phát (k)"}
@@ -1113,12 +1118,14 @@ export function VideoPlayer({
             {state.playing ? <PauseIcon /> : <PlayIcon />}
           </ControlButton>
 
-          <ControlButton
-            label={`Tua tới ${seekStep} giây (l)`}
-            onClick={() => nudgeBy(seekStep)}
-          >
-            <SeekForwardIcon seconds={seekStep} />
-          </ControlButton>
+          {!live && (
+            <ControlButton
+              label={`Tua tới ${seekStep} giây (l)`}
+              onClick={() => nudgeBy(seekStep)}
+            >
+              <SeekForwardIcon seconds={seekStep} />
+            </ControlButton>
+          )}
 
           {episodeNav && (
             <ControlButton label="Tập tiếp theo (n)" onClick={onNext} disabled={!onNext}>
@@ -1133,9 +1140,16 @@ export function VideoPlayer({
             onChange={setVolume}
           />
 
-          <span className="ml-1 select-none text-xs tabular-nums text-white/90">
-            {formatTime(state.currentTime)} / {formatTime(state.duration)}
-          </span>
+          {live ? (
+            <span className="ml-1 flex select-none items-center gap-1.5 text-xs font-semibold text-white/90">
+              <span className="size-2 animate-pulse rounded-full bg-brand" />
+              TRỰC TIẾP
+            </span>
+          ) : (
+            <span className="ml-1 select-none text-xs tabular-nums text-white/90">
+              {formatTime(state.currentTime)} / {formatTime(state.duration)}
+            </span>
+          )}
 
           {episodeLabel && (
             <span className="ml-2 hidden select-none rounded bg-white/15 px-2 py-0.5 text-xs font-medium text-white sm:inline">

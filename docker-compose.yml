@@ -44,6 +44,10 @@ services:
       # Metadata cho file NFO. Thieu thi cac endpoint TMDB tra 503, phan con lai chay.
       TMDB_ACCESS_TOKEN: ${TMDB_ACCESS_TOKEN:-}
       TMDB_API_KEY: ${TMDB_API_KEY:-}
+      # De trong thi goi thang TMDB. ISP chan thi tro qua Cloudflare Worker proxy
+      # (xem tmdb-proxy/README.md): dat TMDB_BASE_URL=.../3 va TMDB_IMAGE_BASE_URL=.../t/p
+      TMDB_BASE_URL: ${TMDB_BASE_URL:-}
+      TMDB_IMAGE_BASE_URL: ${TMDB_IMAGE_BASE_URL:-}
 
       # Trang quan tri: de trong thi chi xem duoc, khong sua duoc nguon.
       RAPPHIM_ADMIN_TOKEN: ${ADMIN_TOKEN:-}

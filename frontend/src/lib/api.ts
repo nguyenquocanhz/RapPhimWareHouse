@@ -6,6 +6,7 @@ import type {
   MovieSummary,
   PageResponse,
   Taxonomy,
+  TvChannel,
   TmdbDetail,
   TmdbDiscoverItem,
   TmdbPerson,
@@ -127,6 +128,11 @@ export const api = {
       { keyword, ...listParams(params) },
       30,
     );
+  },
+
+  /** Kenh truyen hinh truc tiep (nguon iptv-org, backend da cache). */
+  channels() {
+    return request<TvChannel[]>("/api/v1/tv/channels", {}, 3600);
   },
 
   listByCategory(slug: string, params: ListParams = {}) {

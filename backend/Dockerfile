@@ -25,6 +25,10 @@ FROM bellsoft/liberica-openjre-alpine:17
 
 WORKDIR /app
 
+# ffmpeg: dung de bat mot khung hinh lam anh poster cho video trong kho rieng (ZCloud
+# khong co san anh). Chi bat mot frame, co cache dia nen nhe - khac han pipeline dub.
+RUN apk add --no-cache ffmpeg
+
 # Chay bang tai khoan thuong, khong phai root.
 RUN addgroup -S rapphim && adduser -S rapphim -G rapphim
 

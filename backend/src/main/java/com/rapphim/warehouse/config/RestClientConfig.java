@@ -23,25 +23,36 @@ public class RestClientConfig {
     private final ZCloudProperties zcloudProperties;
     private final AniListProperties aniListProperties;
     private final JikanProperties jikanProperties;
+    private final IptvProperties iptvProperties;
 
     public RestClientConfig(ProviderProperties properties,
                             TmdbProperties tmdbProperties,
                             ZCloudProperties zcloudProperties,
                             AniListProperties aniListProperties,
-                            JikanProperties jikanProperties) {
+                            JikanProperties jikanProperties,
+                            IptvProperties iptvProperties) {
         this.properties = properties;
         this.tmdbProperties = tmdbProperties;
         this.zcloudProperties = zcloudProperties;
         this.aniListProperties = aniListProperties;
         this.jikanProperties = jikanProperties;
+        this.iptvProperties = iptvProperties;
     }
 
-    /** Factory dung chung, gioi han thoi gian cho de mot nguon cham khong lam treo API. */
+    /**
+     * Factory dung chung, gioi han thoi gian cho de mot nguon cham khong lam treo API.
+     *
+     * <p>Bat buoc dung Apache HttpClient5, KHONG dung {@code detect()}: ban detect() se
+     * chon factory JDK ({@code java.net.http.HttpClient}), ma factory nay gui than POST
+     * bang chunked khong kem Content-Length. Mot so may chu (uvicorn/FastAPI cua ZCloud,
+     * va GraphQL cua AniList) doc than do thanh RONG -> tra 422 "body required". Apache
+     * gui Content-Length nen than POST toi noi. Xem them chu thich o pom.xml.</p>
+     */
     @Bean
     public ClientHttpRequestFactory providerRequestFactory() {
         HttpClientSettings settings = HttpClientSettings.defaults()
                 .withTimeouts(properties.connectTimeout(), properties.readTimeout());
-        return ClientHttpRequestFactoryBuilder.detect().build(settings);
+        return ClientHttpRequestFactoryBuilder.httpComponents().build(settings);
     }
 
     @Bean
@@ -113,6 +124,20 @@ public class RestClientConfig {
                 .requestFactory(factory)
                 .baseUrl(zcloudProperties.baseUrl())
                 .defaultHeader(HttpHeaders.USER_AGENT, USER_AGENT)
+                .build();
+    }
+
+    /**
+     * Client cho iptv-org (kho playlist M3U cong khai). Playlist tra ve la text/plain,
+     * khong phai JSON, nen KHONG dat Accept: application/json o day.
+     */
+    @Bean
+    public RestClient iptvRestClient(RestClient.Builder builder, ClientHttpRequestFactory factory) {
+        return builder.clone()
+                .requestFactory(factory)
+                .baseUrl(iptvProperties.baseUrl())
+                .defaultHeader(HttpHeaders.USER_AGENT, USER_AGENT)
+                .defaultHeader(HttpHeaders.ACCEPT, MediaType.ALL_VALUE)
                 .build();
     }
 

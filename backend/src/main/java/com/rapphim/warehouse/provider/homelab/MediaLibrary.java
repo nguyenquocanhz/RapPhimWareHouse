@@ -104,18 +104,23 @@ public final class MediaLibrary {
     public static List<LibraryTitle> build(List<ObjectItem> objects, String prefix) {
         // Giu thu tu xuat hien de danh sach on dinh giua cac lan goi.
         Map<String, List<ObjectItem>> byFolder = new LinkedHashMap<>();
+        List<ObjectItem> flat = new ArrayList<>();
 
         for (ObjectItem item : objects) {
             String relative = stripPrefix(item.key(), prefix);
             int slash = relative.indexOf('/');
             if (slash <= 0) {
-                // File nam thang o goc kho, khong thuoc bo phim nao - bo qua.
+                // File nam thang duoi prefix, khong nam trong thu muc phim rieng: moi
+                // file video la mot phim le.
+                flat.add(item);
                 continue;
             }
             byFolder.computeIfAbsent(relative.substring(0, slash), key -> new ArrayList<>()).add(item);
         }
 
         List<LibraryTitle> titles = new ArrayList<>();
+
+        // Thu muc con la mot phim: 1 file video -> phim le, nhieu file -> phim bo.
         byFolder.forEach((folder, files) -> {
             LibraryTitle title = toTitle(folder, files, prefix);
             if (title != null) {
@@ -123,8 +128,60 @@ public final class MediaLibrary {
             }
         });
 
+        // File phang: moi file video la mot phim le rieng; phu de phang gan theo ten goc.
+        List<ObjectItem> flatSubs = flat.stream().filter(f -> hasExtension(f.name(), SUBTITLE_EXT)).toList();
+        for (ObjectItem video : flat) {
+            if (hasExtension(video.name(), VIDEO_EXT)) {
+                titles.add(toSingle(video, flatSubs));
+            }
+        }
+
         titles.sort(Comparator.comparing(LibraryTitle::modifiedAt, Comparator.nullsLast(Comparator.reverseOrder())));
-        return titles;
+        return dedupeSlugs(titles);
+    }
+
+    /** Mot file video nam thang duoi prefix -> mot phim le (dung mot tap). */
+    private static LibraryTitle toSingle(ObjectItem video, List<ObjectItem> subs) {
+        // ZCloud tra "name"/"key" la ca duong dan (vi du "Movies/phim.mp4"); lay rieng
+        // ten file de ten phim khong dinh tien to thu muc.
+        String file = lastSegment(video.key());
+        String name = baseName(file);
+        LibraryEpisode episode = new LibraryEpisode(
+                0,                          // so 0 -> khong phai phim bo, hien "Full"
+                name,
+                slugify(name),
+                file,
+                video.key(),
+                subtitlesFor(video, subs)
+        );
+        return new LibraryTitle(slugify(name), displayName(name), baseName(video.key()),
+                video.lastModified(), List.of(episode));
+    }
+
+    /** Doan cuoi cua duong dan sau dau "/" cuoi cung. */
+    private static String lastSegment(String path) {
+        int slash = path.lastIndexOf('/');
+        return slash >= 0 ? path.substring(slash + 1) : path;
+    }
+
+    /**
+     * Bao dam slug duy nhat. Ten file trong kho thuong lon xon nen hai phim khac
+     * nhau co the ra cung slug (vi du hai file cung chua "AV28"); trung slug thi
+     * trang chi tiet se mo nham phim. Trung thi them hau to "-2", "-3"...
+     */
+    private static List<LibraryTitle> dedupeSlugs(List<LibraryTitle> titles) {
+        Map<String, Integer> seen = new LinkedHashMap<>();
+        List<LibraryTitle> out = new ArrayList<>(titles.size());
+        for (LibraryTitle title : titles) {
+            int count = seen.merge(title.slug(), 1, Integer::sum);
+            if (count == 1) {
+                out.add(title);
+            } else {
+                out.add(new LibraryTitle(title.slug() + "-" + count, title.name(),
+                        title.folder(), title.modifiedAt(), title.episodes()));
+            }
+        }
+        return out;
     }
 
     private static LibraryTitle toTitle(String folder, List<ObjectItem> files, String prefix) {

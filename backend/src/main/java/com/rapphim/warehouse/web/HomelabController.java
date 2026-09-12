@@ -1,8 +1,10 @@
 package com.rapphim.warehouse.web;
 
 import com.rapphim.warehouse.exception.ResourceNotFoundException;
+import com.rapphim.warehouse.provider.homelab.HomelabProvider;
 import com.rapphim.warehouse.provider.homelab.ZCloudClient;
 import com.rapphim.warehouse.service.SubtitleService;
+import com.rapphim.warehouse.service.ThumbnailService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -26,10 +28,15 @@ public class HomelabController {
 
     private final ZCloudClient client;
     private final SubtitleService subtitles;
+    private final HomelabProvider homelab;
+    private final ThumbnailService thumbnails;
 
-    public HomelabController(ZCloudClient client, SubtitleService subtitles) {
+    public HomelabController(ZCloudClient client, SubtitleService subtitles,
+                             HomelabProvider homelab, ThumbnailService thumbnails) {
         this.client = client;
         this.subtitles = subtitles;
+        this.homelab = homelab;
+        this.thumbnails = thumbnails;
     }
 
     /**
@@ -55,5 +62,32 @@ public class HomelabController {
                 // Phu de khong doi, cho trinh duyet giu lai de doi tap khong tai lai.
                 .cacheControl(CacheControl.maxAge(Duration.ofHours(6)).cachePublic())
                 .body(subtitles.toWebVtt(raw, key));
+    }
+
+    /**
+     * Anh poster cua mot phim trong kho rieng, bat tu mot khung hinh video qua ffmpeg
+     * roi cache lai. Frontend goi vong qua {@code /api/thumbnail} cung goc.
+     */
+    @GetMapping(value = "/thumbnail", produces = MediaType.IMAGE_JPEG_VALUE)
+    @Operation(summary = "Anh poster sinh tu khung hinh video cua kho rieng")
+    public ResponseEntity<byte[]> thumbnail(
+            @Parameter(description = "Slug cua phim trong kho", required = true)
+            @RequestParam String slug) {
+
+        String key = homelab.firstEpisodeKey(slug).orElse(null);
+        if (key == null) {
+            throw new ResourceNotFoundException("THUMB_NOT_FOUND", "Không tìm thấy phim: " + slug);
+        }
+
+        byte[] jpg = thumbnails.forKey(key);
+        if (jpg == null || jpg.length == 0) {
+            throw new ResourceNotFoundException("THUMB_UNAVAILABLE", "Không tạo được ảnh cho: " + slug);
+        }
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.IMAGE_JPEG)
+                // Anh khong doi, cho trinh duyet va tang toi uu anh giu lai.
+                .cacheControl(CacheControl.maxAge(Duration.ofDays(7)).cachePublic())
+                .body(jpg);
     }
 }
