@@ -94,6 +94,7 @@ export default function HomeScreen() {
           </Text>
         </View>
         <View style={styles.actions}>
+          <Ionicons name="notifications-outline" size={23} color={theme.text} />
           <Pressable onPress={() => router.push("/search")} hitSlop={10}>
             <Ionicons name="search" size={24} color={theme.text} />
           </Pressable>
