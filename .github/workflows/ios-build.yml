@@ -43,9 +43,12 @@ jobs:
       - name: Build .app (khong ky)
         run: |
           set -e
-          WORKSPACE=$(ls ios/*.xcworkspace | head -1)
+          # .xcworkspace la mot thu muc bundle; phai dung 'ls -d' de lay chinh no
+          # thay vi liet ke noi dung ben trong.
+          WORKSPACE=$(ls -d ios/*.xcworkspace | head -1)
           SCHEME=$(basename "$WORKSPACE" .xcworkspace)
           echo "Workspace=$WORKSPACE  Scheme=$SCHEME"
+          xcodebuild -workspace "$WORKSPACE" -list || true
           xcodebuild \
             -workspace "$WORKSPACE" \
             -scheme "$SCHEME" \
