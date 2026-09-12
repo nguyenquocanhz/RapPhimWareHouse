@@ -8,6 +8,11 @@ export const metadata = {
   description: "Xem các kênh truyền hình Việt Nam trực tiếp (nguồn iptv-org).",
 };
 
+// Render theo tung request, khong tao san luc build: luc `docker build` backend chua
+// chay nen neu prerender se dinh cung trang loi (revalidate 1h moi tu khoi). Danh sach
+// kenh da duoc backend cache 12h nen render dong cung khong ton kem.
+export const dynamic = "force-dynamic";
+
 export default async function TvPage() {
   let channels: TvChannel[] | null = null;
   let failure: string | null = null;
