@@ -33,6 +33,9 @@ public class CacheConfig {
      */
     public static final String HOMELAB_LIBRARY_CACHE = "homelabLibrary";
 
+    /** Danh sach kenh truyen hinh (iptv-org): gan nhu tinh, giu lau. */
+    public static final String TV_CHANNELS_CACHE = "tvChannels";
+
     @Bean
     public CacheManager cacheManager() {
         CaffeineCacheManager manager = new CaffeineCacheManager();
@@ -51,6 +54,10 @@ public class CacheConfig {
         manager.registerCustomCache(HOMELAB_LIBRARY_CACHE, Caffeine.newBuilder()
                 .maximumSize(4)
                 .expireAfterWrite(Duration.ofMinutes(3))
+                .build());
+        manager.registerCustomCache(TV_CHANNELS_CACHE, Caffeine.newBuilder()
+                .maximumSize(4)
+                .expireAfterWrite(Duration.ofHours(12))
                 .build());
         return manager;
     }
