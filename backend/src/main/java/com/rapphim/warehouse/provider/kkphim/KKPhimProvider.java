@@ -81,7 +81,9 @@ public class KKPhimProvider implements MovieProvider {
 
     @Override
     public PageResponse<MovieSummary> latest(MovieQuery query) {
-        return fetchList("/v1/api/danh-sach/phim-moi-cap-nhat", query);
+        // Tai lieu KKPhim moi chi ghi "Phim moi" v1 la /v1/api/danh-sach (khong slug);
+        // slug phim-moi-cap-nhat da bi bo khoi danh sach type nen co the bi go bat cu luc nao.
+        return fetchList("/v1/api/danh-sach", query);
     }
 
     @Override

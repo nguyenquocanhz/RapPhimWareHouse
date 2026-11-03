@@ -33,6 +33,9 @@ Theo [Keep a Changelog](https://keepachangelog.com/vi/1.1.0/). Mỗi mục ghi k
   20/host, 100 tổng — trang chủ gọi nhiều danh sách cùng lúc không còn phải xếp hàng chờ.
 
 ### Sửa
+- **Nguồn KKPhim: danh sách phim mới gọi `/v1/api/danh-sach`** thay cho
+  `/v1/api/danh-sach/phim-moi-cap-nhat` — tài liệu API KKPhim mới đã bỏ slug
+  `phim-moi-cap-nhat` khỏi danh sách type, endpoint cũ có thể bị gỡ.
 - **Nguồn homelab (ZCloud) và AniList không gọi được** — `providerRequestFactory` dùng
   `detect()` chọn factory JDK, gửi thân POST bằng chunked không kèm `Content-Length`
   nên uvicorn/FastAPI của ZCloud (và GraphQL AniList) đọc thành rỗng. Chuyển sang Apache
