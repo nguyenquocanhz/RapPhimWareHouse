@@ -469,8 +469,10 @@ danh sách phim mới cập nhật từ nguồn `kkphim`.
 5. Nếu cache trượt, service gọi `resolve("kkphim")`, tức
    **`ProviderRegistry.get("kkphim")`**, trả về bean `KKPhimProvider`.
 6. **`KKPhimProvider.latest(query)`** dựng URL
-   `/v1/api/danh-sach?page=1&limit=24&sort_field=modified.time&sort_type=desc`
-   rồi gọi qua `kkphimRestClient` (đã cài timeout 5s / 20s).
+   `/v1/api/danh-sach/phim-moi-cap-nhat?page=1&limit=24&sort_field=modified.time&sort_type=desc`
+   rồi gọi qua `kkphimRestClient` (đã cài timeout 5s / 20s). Nếu endpoint này trả 404
+   (đã bị gỡ), provider chuyển sang `/v1/api/danh-sach` — endpoint này luôn trả 24 phim
+   mỗi trang bất kể `limit`, nên provider tự lấy đúng đoạn phim rồi cắt cho khớp `limit`.
 7. **Phân giải tên miền**: để mở kết nối tới `phimapi.com`, container backend hỏi DNS qua
    **CoreDNS** (`172.29.0.53`), CoreDNS chuyển tiếp bằng DNS-over-TLS và trả về địa chỉ IP
    thật, không bị chèn giả.
