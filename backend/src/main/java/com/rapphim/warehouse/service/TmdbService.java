@@ -41,7 +41,7 @@ public class TmdbService {
      *
      * @return rong neu nguon khong kem ma TMDB hoac TMDB khong co ban ghi
      */
-    @Cacheable(cacheNames = CacheConfig.MOVIE_DETAIL_CACHE,
+    @Cacheable(sync = true, cacheNames = CacheConfig.MOVIE_DETAIL_CACHE,
             key = "'tmdb:' + #movie.provider() + ':' + #movie.slug()")
     public Optional<TmdbDetail> enrich(MovieDetail movie) {
         if (movie.tmdb() == null || !movie.tmdb().isUsable()) {
@@ -73,18 +73,18 @@ public class TmdbService {
      * @param type {@code movie} hoac {@code tv}
      * @param id   ma tren TMDB
      */
-    @Cacheable(cacheNames = CacheConfig.MOVIE_DETAIL_CACHE, key = "'tmdb:' + #type + ':' + #id")
+    @Cacheable(sync = true, cacheNames = CacheConfig.MOVIE_DETAIL_CACHE, key = "'tmdb:' + #type + ':' + #id")
     public Optional<TmdbDetail> details(String type, String id) {
         return client.details(type, id);
     }
 
     /** Phim cua mot dien vien, tra theo ma TMDB cua nguoi do. */
-    @Cacheable(cacheNames = CacheConfig.MOVIE_DETAIL_CACHE, key = "'tmdb:person:' + #id")
+    @Cacheable(sync = true, cacheNames = CacheConfig.MOVIE_DETAIL_CACHE, key = "'tmdb:person:' + #id")
     public Optional<TmdbPerson> person(String id) {
         return client.person(id);
     }
 
-    @Cacheable(cacheNames = CacheConfig.MOVIE_LIST_CACHE,
+    @Cacheable(sync = true, cacheNames = CacheConfig.MOVIE_LIST_CACHE,
             key = "'tmdb:discover:' + #query.page() + ':' + #query.sortBy() + ':' + #query.withGenres()"
                     + " + ':' + #query.withOriginalLanguage() + ':' + #query.year()"
                     + " + ':' + #query.voteAverageGte() + ':' + #query.voteCountGte()"
@@ -93,7 +93,7 @@ public class TmdbService {
         return client.discoverMovies(query);
     }
 
-    @Cacheable(cacheNames = CacheConfig.TAXONOMY_CACHE, key = "'tmdb:genres:' + #type")
+    @Cacheable(sync = true, cacheNames = CacheConfig.TAXONOMY_CACHE, key = "'tmdb:genres:' + #type")
     public List<Taxonomy> genres(String type) {
         return client.genres(type);
     }

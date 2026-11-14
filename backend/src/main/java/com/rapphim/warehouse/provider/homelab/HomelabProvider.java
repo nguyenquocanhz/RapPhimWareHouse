@@ -61,7 +61,7 @@ public class HomelabProvider implements MovieProvider {
      * <p>Duoc dem lai vi moi lan goi phai duyet het cay file. Bo dem het han theo cau
      * hinh chung trong {@code CacheConfig}, them phim moi thi doi mot nhip la thay.</p>
      */
-    @Cacheable(cacheNames = "homelabLibrary")
+    @Cacheable(sync = true, cacheNames = "homelabLibrary")
     public List<LibraryTitle> library() {
         if (!client.isConfigured()) {
             return List.of();

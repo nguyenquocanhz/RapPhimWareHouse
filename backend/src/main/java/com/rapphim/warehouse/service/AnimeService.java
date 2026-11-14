@@ -41,19 +41,19 @@ public class AnimeService {
         this.jikan = jikan;
     }
 
-    @Cacheable(cacheNames = CacheConfig.MOVIE_LIST_CACHE, key = "'anime:trending:' + #page + ':' + #perPage")
+    @Cacheable(sync = true, cacheNames = CacheConfig.MOVIE_LIST_CACHE, key = "'anime:trending:' + #page + ':' + #perPage")
     public PageResponse<AnimeSummary> trending(int page, int perPage) {
         return withFallback(() -> anilist.trending(page, perPage), () -> jikan.trending(page, perPage));
     }
 
-    @Cacheable(cacheNames = CacheConfig.MOVIE_LIST_CACHE,
+    @Cacheable(sync = true, cacheNames = CacheConfig.MOVIE_LIST_CACHE,
             key = "'anime:search:' + #keyword + ':' + #page + ':' + #perPage")
     public PageResponse<AnimeSummary> search(String keyword, int page, int perPage) {
         return withFallback(() -> anilist.search(keyword, page, perPage),
                 () -> jikan.search(keyword, page, perPage));
     }
 
-    @Cacheable(cacheNames = CacheConfig.TAXONOMY_CACHE, key = "'anime:genres'")
+    @Cacheable(sync = true, cacheNames = CacheConfig.TAXONOMY_CACHE, key = "'anime:genres'")
     public List<String> genres() {
         return withFallback(anilist::genres, jikan::genres);
     }
@@ -64,7 +64,7 @@ public class AnimeService {
      *
      * @param source {@code "jikan"} thi hoi Jikan, con lai mac dinh AniList
      */
-    @Cacheable(cacheNames = CacheConfig.MOVIE_DETAIL_CACHE, key = "'anime:' + #source + ':' + #id")
+    @Cacheable(sync = true, cacheNames = CacheConfig.MOVIE_DETAIL_CACHE, key = "'anime:' + #source + ':' + #id")
     public Optional<AnimeDetail> details(int id, String source) {
         return provider(source).details(id);
     }

@@ -52,8 +52,23 @@ public class RestClientConfig {
     public ClientHttpRequestFactory providerRequestFactory() {
         HttpClientSettings settings = HttpClientSettings.defaults()
                 .withTimeouts(properties.connectTimeout(), properties.readTimeout());
-        return ClientHttpRequestFactoryBuilder.httpComponents().build(settings);
+        return ClientHttpRequestFactoryBuilder.httpComponents()
+                .withConnectionManagerCustomizer(pool -> pool
+                        .setMaxConnPerRoute(MAX_CONN_PER_ROUTE)
+                        .setMaxConnTotal(MAX_CONN_TOTAL))
+                .build(settings);
     }
+
+    /**
+     * Han muc ket noi cua pool dung chung.
+     *
+     * <p>Mac dinh cua HttpClient5 chi 5 ket noi moi may chu, 25 tong. Mot lan mo trang
+     * chu frontend goi cung luc nhieu danh sach toi cung mot nguon, nen request thu 6
+     * tro di phai xep hang cho ket noi - cham ma khong co loi nao bao ra. Tat ca client
+     * (KKPhim, NguonC, VSMOV, TMDB, AniList...) dung chung pool nay nen tong de rong.</p>
+     */
+    static final int MAX_CONN_PER_ROUTE = 20;
+    static final int MAX_CONN_TOTAL = 100;
 
     @Bean
     public RestClient kkphimRestClient(RestClient.Builder builder, ClientHttpRequestFactory factory) {

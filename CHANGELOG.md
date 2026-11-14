@@ -23,6 +23,15 @@ Theo [Keep a Changelog](https://keepachangelog.com/vi/1.1.0/). Mỗi mục ghi k
 - **Bộ tài liệu hướng dẫn** ở `docs/huong-dan/` (00–07 + mục lục) theo phong cách KB
   123host, kèm bộ dựng Markdown → PDF.
 
+### Tối ưu
+- **Cache danh sách phim “trả bản cũ, làm mới ở nền”** — quá 5 phút vẫn trả ngay bản
+  đang có rồi làm mới ở nền, quá 30 phút mới xoá hẳn. Người xem không còn phải chờ nguồn
+  (0,2–1,7 giây) mỗi lần cache hết hạn; nguồn chập chờn thì vẫn còn dữ liệu cũ để xem.
+- **Gộp request trùng** — mọi `@Cacheable` bật `sync = true`: nhiều người mở cùng một
+  trang lúc cache trống chỉ gọi nguồn một lần.
+- **Nâng giới hạn kết nối HTTP** tới nguồn từ 5/host, 25 tổng (mặc định HttpClient5) lên
+  20/host, 100 tổng — trang chủ gọi nhiều danh sách cùng lúc không còn phải xếp hàng chờ.
+
 ### Sửa
 - **Nguồn homelab (ZCloud) và AniList không gọi được** — `providerRequestFactory` dùng
   `detect()` chọn factory JDK, gửi thân POST bằng chunked không kèm `Content-Length`

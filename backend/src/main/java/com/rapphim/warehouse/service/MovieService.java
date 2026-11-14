@@ -25,13 +25,13 @@ public class MovieService {
         this.registry = registry;
     }
 
-    @Cacheable(cacheNames = CacheConfig.MOVIE_LIST_CACHE,
+    @Cacheable(sync = true, cacheNames = CacheConfig.MOVIE_LIST_CACHE,
             key = "'latest:' + #provider + ':' + #query.page() + ':' + #query.limit()")
     public PageResponse<MovieSummary> latest(String provider, MovieQuery query) {
         return resolve(provider).latest(query);
     }
 
-    @Cacheable(cacheNames = CacheConfig.MOVIE_LIST_CACHE,
+    @Cacheable(sync = true, cacheNames = CacheConfig.MOVIE_LIST_CACHE,
             key = "'type:' + #provider + ':' + #listType + ':' + #query.page() + ':' + #query.limit()"
                     + " + ':' + #query.category() + ':' + #query.country() + ':' + #query.year()"
                     + " + ':' + #query.sortField() + ':' + #query.sortType()")
@@ -39,7 +39,7 @@ public class MovieService {
         return resolve(provider).listByType(listType, query);
     }
 
-    @Cacheable(cacheNames = CacheConfig.MOVIE_LIST_CACHE,
+    @Cacheable(sync = true, cacheNames = CacheConfig.MOVIE_LIST_CACHE,
             key = "'search:' + #provider + ':' + #keyword.toLowerCase()"
                     + " + ':' + #query.page() + ':' + #query.limit()")
     public PageResponse<MovieSummary> search(String provider, String keyword, MovieQuery query) {
@@ -49,21 +49,21 @@ public class MovieService {
         return resolve(provider).search(keyword.trim(), query);
     }
 
-    @Cacheable(cacheNames = CacheConfig.MOVIE_LIST_CACHE,
+    @Cacheable(sync = true, cacheNames = CacheConfig.MOVIE_LIST_CACHE,
             key = "'category:' + #provider + ':' + #categorySlug + ':' + #query.page() + ':' + #query.limit()"
                     + " + ':' + #query.country() + ':' + #query.year()")
     public PageResponse<MovieSummary> listByCategory(String provider, String categorySlug, MovieQuery query) {
         return resolve(provider).listByCategory(categorySlug, query);
     }
 
-    @Cacheable(cacheNames = CacheConfig.MOVIE_LIST_CACHE,
+    @Cacheable(sync = true, cacheNames = CacheConfig.MOVIE_LIST_CACHE,
             key = "'country:' + #provider + ':' + #countrySlug + ':' + #query.page() + ':' + #query.limit()"
                     + " + ':' + #query.category() + ':' + #query.year()")
     public PageResponse<MovieSummary> listByCountry(String provider, String countrySlug, MovieQuery query) {
         return resolve(provider).listByCountry(countrySlug, query);
     }
 
-    @Cacheable(cacheNames = CacheConfig.MOVIE_LIST_CACHE,
+    @Cacheable(sync = true, cacheNames = CacheConfig.MOVIE_LIST_CACHE,
             key = "'year:' + #provider + ':' + #year + ':' + #query.page() + ':' + #query.limit()"
                     + " + ':' + #query.category() + ':' + #query.country()")
     public PageResponse<MovieSummary> listByYear(String provider, int year, MovieQuery query) {
@@ -76,7 +76,7 @@ public class MovieService {
     /**
      * @throws ResourceNotFoundException neu nguon khong co phim voi slug tuong ung
      */
-    @Cacheable(cacheNames = CacheConfig.MOVIE_DETAIL_CACHE, key = "#provider + ':' + #slug")
+    @Cacheable(sync = true, cacheNames = CacheConfig.MOVIE_DETAIL_CACHE, key = "#provider + ':' + #slug")
     public MovieDetail findBySlug(String provider, String slug) {
         return resolve(provider).findBySlug(slug)
                 .orElseThrow(() -> new ResourceNotFoundException("MOVIE_NOT_FOUND",
