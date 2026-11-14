@@ -37,7 +37,7 @@ public class TvChannelService {
     }
 
     /** Danh sach kenh VN. Cache 12h (xem {@link CacheConfig#TV_CHANNELS_CACHE}). */
-    @Cacheable(cacheNames = CacheConfig.TV_CHANNELS_CACHE, key = "'vn'")
+    @Cacheable(sync = true, cacheNames = CacheConfig.TV_CHANNELS_CACHE, key = "'vn'")
     public List<TvChannel> vietnamChannels() {
         String m3u = client.get()
                 .uri(properties.vnPath())
