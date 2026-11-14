@@ -42,6 +42,15 @@ import java.util.function.Function;
 public class KKPhimProvider implements MovieProvider {
 
     private static final Logger log = LoggerFactory.getLogger(KKPhimProvider.class);
+
+    /** Phim moi - endpoint cu, ton trong limit. */
+    static final String LATEST_PATH = "/v1/api/danh-sach/phim-moi-cap-nhat";
+
+    /** Phim moi - endpoint moi theo tai lieu, nhung bo qua limit. Chi dung khi cu tra 404. */
+    static final String LATEST_FALLBACK_PATH = "/v1/api/danh-sach";
+
+    /** So phim/trang co dinh cua endpoint du phong (do that 2026-11). */
+    static final int FALLBACK_PAGE_SIZE = 24;
     private static final String PROVIDER_CODE = "kkphim";
 
     private final RestClient client;
@@ -79,9 +88,83 @@ public class KKPhimProvider implements MovieProvider {
         return ProviderType.KKPHIM;
     }
 
+    /**
+     * Phim moi: goi endpoint cu truoc, endpoint moi chi la du phong.
+     *
+     * <p>Tai lieu KKPhim moi chi ghi "Phim moi" v1 la {@code /v1/api/danh-sach} (khong
+     * slug) va da bo {@code phim-moi-cap-nhat} khoi danh sach type, nen endpoint cu co
+     * the bi go. Nhung endpoint moi BO QUA {@code limit} (luon tra co dinh 24 phim/trang,
+     * da do that), con endpoint cu van chay va ton trong {@code limit}. Nen: dung endpoint
+     * cu; chi khi no tra 404 (KKPhim tra 404 cho duong dan khong ton tai, con trang vuot
+     * qua so trang van la 200) moi chuyen sang endpoint moi va tu cat cho dung limit.</p>
+     */
     @Override
     public PageResponse<MovieSummary> latest(MovieQuery query) {
-        return fetchList("/v1/api/danh-sach/phim-moi-cap-nhat", query);
+        try {
+            return fetchList(LATEST_PATH, query, Function.identity(), true);
+        } catch (EndpointGoneException gone) {
+            log.warn("KKPhim tra 404 cho {}, chuyen sang {}", LATEST_PATH, LATEST_FALLBACK_PATH);
+            return latestFromFallback(query);
+        }
+    }
+
+    /**
+     * Doc endpoint du phong (co dinh N phim/trang) roi cat lai cho dung trang + limit
+     * nguoi goi xin. Khong chi cat dau trang: trang 2 voi limit 12 la phim 13-24, nam
+     * trong trang 1 cua nguon chu khong phai trang 2.
+     */
+    private PageResponse<MovieSummary> latestFromFallback(MovieQuery query) {
+        long start = (long) (query.page() - 1) * query.limit();
+        long end = start + query.limit();
+
+        KKPhimModels.V1Envelope first = fetchFallbackPage(1 + (int) (start / FALLBACK_PAGE_SIZE));
+        int upstreamSize = upstreamPageSize(first);
+        int firstPage = 1 + (int) (start / upstreamSize);
+        int lastPage = 1 + (int) ((end - 1) / upstreamSize);
+
+        java.util.ArrayList<MovieSummary> collected = new java.util.ArrayList<>();
+        long totalItems = 0;
+        for (int upstreamPage = firstPage; upstreamPage <= lastPage; upstreamPage++) {
+            // Trang dau da tai san neu nguon dung co dinh FALLBACK_PAGE_SIZE nhu da do.
+            KKPhimModels.V1Envelope envelope =
+                    (upstreamPage == 1 + (int) (start / FALLBACK_PAGE_SIZE))
+                            ? first : fetchFallbackPage(upstreamPage);
+            if (envelope == null || envelope.data() == null) {
+                break;
+            }
+            KKPhimModels.V1Envelope.V1Data data = envelope.data();
+            if (data.params() != null && data.params().pagination() != null) {
+                totalItems = Math.max(totalItems, data.params().pagination().totalItems());
+            }
+            String cdn = (data.cdnImage() == null || data.cdnImage().isBlank()) ? cdnImage : data.cdnImage();
+            List<MovieSummary> items = ProviderSupport.orEmpty(data.items()).stream()
+                    .map(item -> toSummary(item, cdn))
+                    .toList();
+            if (items.isEmpty()) {
+                break;
+            }
+            collected.addAll(items);
+        }
+
+        int skip = (int) (start - (long) (firstPage - 1) * upstreamSize);
+        List<MovieSummary> page = collected.stream().skip(skip).limit(query.limit()).toList();
+        return PageResponse.of(page, PageMeta.of(query.page(), query.limit(), totalItems), code);
+    }
+
+    private KKPhimModels.V1Envelope fetchFallbackPage(int upstreamPage) {
+        return call(builder -> builder.path(LATEST_FALLBACK_PATH)
+                        .queryParam("page", upstreamPage)
+                        .build(),
+                KKPhimModels.V1Envelope.class, false);
+    }
+
+    private static int upstreamPageSize(KKPhimModels.V1Envelope envelope) {
+        if (envelope != null && envelope.data() != null && envelope.data().params() != null
+                && envelope.data().params().pagination() != null
+                && envelope.data().params().pagination().totalItemsPerPage() > 0) {
+            return envelope.data().params().pagination().totalItemsPerPage();
+        }
+        return FALLBACK_PAGE_SIZE;
     }
 
     @Override
@@ -143,6 +226,16 @@ public class KKPhimProvider implements MovieProvider {
 
     private PageResponse<MovieSummary> fetchList(String path, MovieQuery query,
                                                  Function<UriBuilder, UriBuilder> extraParams) {
+        return fetchList(path, query, extraParams, false);
+    }
+
+    /**
+     * @param notFoundIsGone {@code true} thi 404 nem {@link EndpointGoneException} thay vi
+     *                       doc body nhu du lieu rong - de ham goi biet duong chuyen nguon.
+     */
+    private PageResponse<MovieSummary> fetchList(String path, MovieQuery query,
+                                                 Function<UriBuilder, UriBuilder> extraParams,
+                                                 boolean notFoundIsGone) {
         KKPhimModels.V1Envelope response = call(builder -> {
             UriBuilder uri = builder.path(path)
                     .queryParam("page", query.page())
@@ -159,7 +252,7 @@ public class KKPhimProvider implements MovieProvider {
                 uri = uri.queryParam("year", query.year());
             }
             return extraParams.apply(uri).build();
-        }, KKPhimModels.V1Envelope.class);
+        }, KKPhimModels.V1Envelope.class, notFoundIsGone);
 
         if (response == null || response.data() == null) {
             return PageResponse.empty(query.page(), query.limit(), code);
@@ -188,14 +281,23 @@ public class KKPhimProvider implements MovieProvider {
     }
 
     private <T> T call(Function<UriBuilder, URI> uriFunction, Class<T> responseType) {
+        return call(uriFunction, responseType, false);
+    }
+
+    private <T> T call(Function<UriBuilder, URI> uriFunction, Class<T> responseType, boolean notFoundIsGone) {
         try {
             return client.get()
                     .uri(uriFunction::apply)
                     .retrieve()
                     .onStatus(HttpStatusCode::is4xxClientError, (request, response) -> {
+                        if (notFoundIsGone && response.getStatusCode().value() == 404) {
+                            throw new EndpointGoneException();
+                        }
                         // KKPhim tra 404 kem body JSON khi khong tim thay - doc body de xu ly nhu du lieu rong.
                     })
                     .body(responseType);
+        } catch (EndpointGoneException ex) {
+            throw ex;
         } catch (RestClientException ex) {
             log.warn("Goi KKPhim that bai: {}", ex.getMessage());
             throw new UpstreamException(code,
@@ -303,5 +405,12 @@ public class KKPhimProvider implements MovieProvider {
                 .map(String::trim)
                 .filter(name -> !name.isEmpty() && !ProviderSupport.isPlaceholder(name))
                 .toList();
+    }
+
+    /** Dau hieu noi bo: endpoint tra 404, tuc la duong dan khong con ton tai. */
+    static final class EndpointGoneException extends RuntimeException {
+        EndpointGoneException() {
+            super(null, null, false, false);
+        }
     }
 }

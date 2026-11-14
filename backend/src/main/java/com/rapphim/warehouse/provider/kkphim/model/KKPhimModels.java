@@ -16,7 +16,8 @@ public final class KKPhimModels {
 
     /**
      * KKPhim tra ve truong {@code status} khong dong nhat: nhom {@code /danh-sach} tra ve
-     * boolean {@code true}, con {@code /v1/api/tim-kiem} tra ve chuoi {@code "success"}.
+     * boolean {@code true}, con {@code /v1/api/tim-kiem} va {@code /v1/api/danh-sach} (khong slug)
+     * tra ve chuoi {@code "success"}.
      * Ham nay chap nhan ca hai dang.
      */
     public static boolean isOk(Object status) {
